@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article#">
+    <meta charset="UTF-8" />
+
+    <meta name="generator" content="Hugo 0.74.3" /><meta name="theme-color" content="#16171d" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+    
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+
+    <title>Bilibili Kratos 框架源码分析(2) -- Kratos 一些简单例子 | HHF 技术博客</title>
+
+    <link rel="stylesheet" href="/css/meme.min.0dbbf9afa89ac8dd82a75ac6e566dbff2c2c893bb4155d92e86a72c1b221c237.css"/>
+
+    
+    
+        <script src="/js/meme.min.dc5f06e091343e25ce96aab325d0ae445a2a6c77e33658dfb443924ce61b7608.js"></script>
+
+    
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB&#43;Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Noto&#43;Serif&#43;SC:wght@400;500;700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap" media="print" onload="this.media='all'" />
+        <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB&#43;Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Noto&#43;Serif&#43;SC:wght@400;500;700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap" /></noscript>
+
+    <meta name="author" content="haohongfan" /><meta name="description" content="本篇主要介绍四种使用 kratos 的例子. 前情透漏, 这一篇的篇幅比较长, 如果已经会用 Kratos 的可以跳过这一节 http 服务 http 服务其实就比较简单, 开篇的Golang 大法好 ！！直接就能对外提供 http 服务. http server默认有两个函数howToStart, ping. 关于ping 函数后面再具体看其作用 如何添加一个新的 api 接口? 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 // internal/server/http/server.go func initRouter(e *bm.Engine) {……" />
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#2a6df4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="HHF 技术博客" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="HHF 技术博客" />
+    <meta name="msapplication-starturl" content="../../" />
+    <meta name="msapplication-TileColor" content="#fff" />
+    <meta name="msapplication-TileImage" content="../../icons/mstile-150x150.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    
+    
+
+    
+    <link rel="canonical" href="https://www.haohongfan.com/post/2020-05-16-kratos-demo/" />
+    
+
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "datePublished": "2020-05-16T10:14:07+08:00",
+        "dateModified": "2020-05-16T10:14:07+08:00",
+        "url": "https://www.haohongfan.com/post/2020-05-16-kratos-demo/",
+        "headline": "Bilibili Kratos 框架源码分析(2) -- Kratos 一些简单例子",
+        "description": "本篇主要介绍四种使用 kratos 的例子. 前情透漏, 这一篇的篇幅比较长, 如果已经会用 Kratos 的可以跳过这一节 http 服务 http 服务其实就比较简单, 开篇的Golang 大法好 ！！直接就能对外提供 http 服务. http server默认有两个函数howToStart, ping. 关于ping 函数后面再具体看其作用 如何添加一个新的 api 接口? 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 // internal/server/http/server.go func initRouter(e *bm.Engine) {……",
+        "inLanguage" : "zh-CN",
+        "articleSection": "post",
+        "wordCount":  2438 ,
+        "image": ["https://images.haohongfan.com/kratos-demo-bloomrpc.png","https://images.haohongfan.com/http-http.png","https://images.haohongfan.com/http-up.png","https://images.haohongfan.com/http-grpc.png"],
+        "author": {
+            "@type": "Person",
+            "description": "Viva La Vida",
+            "email": "haohongfan2010@126.com",
+            "image": "https://www.haohongfan.com/icons/apple-touch-icon.png",
+            "url": "https://www.haohongfan.com/",
+            "name": "haohongfan"
+        },
+        "license": "[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)",
+        "publisher": {
+            "@type": "Organization",
+            "name": "HHF 技术博客",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://www.haohongfan.com/icons/apple-touch-icon.png"
+            },
+            "url": "https://www.haohongfan.com/"
+        },
+        "mainEntityOfPage": {
+            "@type": "WebSite",
+            "@id": "https://www.haohongfan.com/"
+        }
+    }
+</script>
+
+    
+
+<meta name="twitter:card" content="summary_large_image" />
+
+
+
+    
+
+
+
+<meta property="og:title" content="Bilibili Kratos 框架源码分析(2) -- Kratos 一些简单例子" />
+<meta property="og:description" content="本篇主要介绍四种使用 kratos 的例子. 前情透漏, 这一篇的篇幅比较长, 如果已经会用 Kratos 的可以跳过这一节 http 服务 http 服务其实就比较简单, 开篇的Golang 大法好 ！！直接就能对外提供 http 服务. http server默认有两个函数howToStart, ping. 关于ping 函数后面再具体看其作用 如何添加一个新的 api 接口? 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 // internal/server/http/server.go func initRouter(e *bm.Engine) {……" />
+<meta property="og:url" content="https://www.haohongfan.com/post/2020-05-16-kratos-demo/" />
+<meta property="og:site_name" content="HHF 技术博客" />
+<meta property="og:locale" content="zh" /><meta property="og:image" content="https://images.haohongfan.com/kratos-demo-bloomrpc.png" />
+<meta property="og:type" content="article" />
+    <meta property="article:published_time" content="2020-05-16T10:14:07&#43;08:00" />
+    <meta property="article:modified_time" content="2020-05-16T10:14:07&#43;08:00" />
+    
+    <meta property="article:section" content="post" />
+
+
+
+    
+</head>
+
+    <body>
+        <div class="container">
+            
+    <header class="header">
+        
+            <div class="header-wrapper">
+                <div class="header-inner single">
+                    
+    <div class="site-brand">
+        
+            <a href="/" class="brand">HHF 技术博客</a>
+        
+    </div>
+
+                    <nav class="nav">
+    <ul class="menu" id="menu">
+        
+            
+        
+        
+        
+        
+            
+                <li class="menu-item"><a href="/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="icon home"><path d="M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z"/></svg><span class="menu-item-name">首页</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/post/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon archive"><path d="M32 448c0 17.7 14.3 32 32 32h384c17.7 0 32-14.3 32-32V160H32v288zm160-212c0-6.6 5.4-12 12-12h104c6.6 0 12 5.4 12 12v8c0 6.6-5.4 12-12 12H204c-6.6 0-12-5.4-12-12v-8zM480 32H32C14.3 32 0 46.3 0 64v48c0 8.8 7.2 16 16 16h480c8.8 0 16-7.2 16-16V64c0-17.7-14.3-32-32-32z"/></svg><span class="menu-item-name">归档</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/categories/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon th"><path d="M149.333 56v80c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24h101.333c13.255 0 24 10.745 24 24zm181.334 240v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm32-240v80c0 13.255 10.745 24 24 24H488c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24zm-32 80V56c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm-205.334 56H24c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24zM0 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm386.667-56H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zm0 160H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zM181.333 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24z"/></svg><span class="menu-item-name">分类</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/tags/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="icon tags"><path d="M497.941 225.941L286.059 14.059A48 48 0 0 0 252.118 0H48C21.49 0 0 21.49 0 48v204.118a48 48 0 0 0 14.059 33.941l211.882 211.882c18.744 18.745 49.136 18.746 67.882 0l204.118-204.118c18.745-18.745 18.745-49.137 0-67.882zM112 160c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm513.941 133.823L421.823 497.941c-18.745 18.745-49.137 18.745-67.882 0l-.36-.36L527.64 323.522c16.999-16.999 26.36-39.6 26.36-63.64s-9.362-46.641-26.36-63.64L331.397 0h48.721a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882z"/></svg><span class="menu-item-name">标签</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/abouts/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon user-circle"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 96c48.6 0 88 39.4 88 88s-39.4 88-88 88-88-39.4-88-88 39.4-88 88-88zm0 344c-58.7 0-111.3-26.6-146.5-68.2 18.8-35.4 55.6-59.8 98.5-59.8 2.4 0 4.8.4 7.1 1.1 13 4.2 26.6 6.9 40.9 6.9 14.3 0 28-2.7 40.9-6.9 2.3-.7 4.7-1.1 7.1-1.1 42.9 0 79.7 24.4 98.5 59.8C359.3 421.4 306.7 448 248 448z"/></svg><span class="menu-item-name">关于</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/learns/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon grav"><path d="M301.1 212c4.4 4.4 4.4 11.9 0 16.3l-9.7 9.7c-4.4 4.7-11.9 4.7-16.6 0l-10.5-10.5c-4.4-4.7-4.4-11.9 0-16.6l9.7-9.7c4.4-4.4 11.9-4.4 16.6 0l10.5 10.8zm-30.2-19.7c3-3 3-7.8 0-10.5-2.8-3-7.5-3-10.5 0-2.8 2.8-2.8 7.5 0 10.5 3.1 2.8 7.8 2.8 10.5 0zm-26 5.3c-3 2.8-3 7.5 0 10.2 2.8 3 7.5 3 10.5 0 2.8-2.8 2.8-7.5 0-10.2-3-3-7.7-3-10.5 0zm72.5-13.3c-19.9-14.4-33.8-43.2-11.9-68.1 21.6-24.9 40.7-17.2 59.8.8 11.9 11.3 29.3 24.9 17.2 48.2-12.5 23.5-45.1 33.2-65.1 19.1zm47.7-44.5c-8.9-10-23.3 6.9-15.5 16.1 7.4 9 32.1 2.4 15.5-16.1zM504 256c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zm-66.2 42.6c2.5-16.1-20.2-16.6-25.2-25.7-13.6-24.1-27.7-36.8-54.5-30.4 11.6-8 23.5-6.1 23.5-6.1.3-6.4 0-13-9.4-24.9 3.9-12.5.3-22.4.3-22.4 15.5-8.6 26.8-24.4 29.1-43.2 3.6-31-18.8-59.2-49.8-62.8-22.1-2.5-43.7 7.7-54.3 25.7-23.2 40.1 1.4 70.9 22.4 81.4-14.4-1.4-34.3-11.9-40.1-34.3-6.6-25.7 2.8-49.8 8.9-61.4 0 0-4.4-5.8-8-8.9 0 0-13.8 0-24.6 5.3 11.9-15.2 25.2-14.4 25.2-14.4 0-6.4-.6-14.9-3.6-21.6-5.4-11-23.8-12.9-31.7 2.8.1-.2.3-.4.4-.5-5 11.9-1.1 55.9 16.9 87.2-2.5 1.4-9.1 6.1-13 10-21.6 9.7-56.2 60.3-56.2 60.3-28.2 10.8-77.2 50.9-70.6 79.7.3 3 1.4 5.5 3 7.5-2.8 2.2-5.5 5-8.3 8.3-11.9 13.8-5.3 35.2 17.7 24.4 15.8-7.2 29.6-20.2 36.3-30.4 0 0-5.5-5-16.3-4.4 27.7-6.6 34.3-9.4 46.2-9.1 8 3.9 8-34.3 8-34.3 0-14.7-2.2-31-11.1-41.5 12.5 12.2 29.1 32.7 28 60.6-.8 18.3-15.2 23-15.2 23-9.1 16.6-43.2 65.9-30.4 106 0 0-9.7-14.9-10.2-22.1-17.4 19.4-46.5 52.3-24.6 64.5 26.6 14.7 108.8-88.6 126.2-142.3 34.6-20.8 55.4-47.3 63.9-65 22 43.5 95.3 94.5 101.1 59z"/></svg><span class="menu-item-name">笔记</span></a>
+                </li>
+            
+        
+            
+                
+                    
+                    
+                        <li class="menu-item">
+                            <a id="theme-switcher" href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-light"><path d="M193.2 104.5l48.8-97.5a18 18 0 0128 0l48.8 97.5 103.4 -34.5a18 18 0 0119.8 19.8l-34.5 103.4l97.5 48.8a18 18 0 010 28l-97.5 48.8 34.5 103.4a18 18 0 01-19.8 19.8l-103.4-34.5-48.8 97.5a18 18 0 01-28 0l-48.8-97.5l-103.4 34.5a18 18 0 01-19.8-19.8l34.5-103.4-97.5-48.8a18 18 0 010-28l97.5-48.8-34.5-103.4a18 18 0 0119.8-19.8zM256 128a128 128 0 10.01 0M256 160a96 96 0 10.01 0"/></svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-dark"><path d="M27 412a256 256 0 10154-407a11.5 11.5 0 00-5 20a201.5 201.5 0 01-134 374a11.5 11.5 0 00-15 13"/></svg></a>
+                        </li>
+                    
+                
+            
+        
+            
+                
+            
+        
+    </ul>
+</nav>
+
+                    
+                </div>
+            </div>
+            
+    <input type="checkbox" id="nav-toggle" aria-hidden="true" />
+    <label for="nav-toggle" class="nav-toggle"></label>
+    <label for="nav-toggle" class="nav-curtain"></label>
+
+
+        
+    </header>
+
+
+
+
+            
+            
+    <main class="main single" id="main">
+    <div class="main-inner">
+
+        
+
+        <article class="content post h-entry" data-align="justify" data-type="post" data-toc-num="true">
+
+            <h1 class="post-title p-name">Bilibili Kratos 框架源码分析(2) -- Kratos 一些简单例子</h1>
+
+            
+
+            
+                
+            
+
+            
+                
+
+<div class="post-meta">
+    
+        
+        <time datetime="2020-05-16T10:14:07&#43;08:00" class="post-meta-item published dt-published"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M148 288h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm108-12v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 96v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96-260v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h48V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h128V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h48c26.5 0 48 21.5 48 48zm-48 346V160H48v298c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>&nbsp;2020.5.16</time>
+    
+    
+        
+        <time datetime="2020-05-16T10:14:07&#43;08:00" class="post-meta-item modified dt-updated"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M400 64h-48V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H160V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H48C21.49 64 0 85.49 0 112v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm-6 400H54a6 6 0 0 1-6-6V160h352v298a6 6 0 0 1-6 6zm-52.849-200.65L198.842 404.519c-4.705 4.667-12.303 4.637-16.971-.068l-75.091-75.699c-4.667-4.705-4.637-12.303.068-16.971l22.719-22.536c4.705-4.667 12.303-4.637 16.97.069l44.104 44.461 111.072-110.181c4.705-4.667 12.303-4.637 16.971.068l22.536 22.718c4.667 4.705 4.636 12.303-.069 16.97z"/></svg>&nbsp;2020.5.16</time>
+    
+    
+    
+        
+        
+            
+            
+                
+                
+                
+                
+                    
+                    
+                    
+                        
+                            
+                            
+                        
+                    
+                
+            
+            
+            
+                <span class="post-meta-item category"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M464 128H272l-54.63-54.63c-6-6-14.14-9.37-22.63-9.37H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V176c0-26.51-21.49-48-48-48zm0 272H48V112h140.12l54.63 54.63c6 6 14.14 9.37 22.63 9.37H464v224z"/></svg>&nbsp;<a href="/post/" class="category-link p-category">Post</a></span>
+            
+        
+        
+    
+    
+        
+        <span class="post-meta-item wordcount"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"/></svg>&nbsp;2438</span>
+    
+    
+    
+        
+            
+            <span class="post-meta-item busuanzi-page-pv" id="busuanzi_container_page_pv"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="icon post-meta-icon"><path d="M288 144a110.94 110.94 0 0 0-31.24 5 55.4 55.4 0 0 1 7.24 27 56 56 0 0 1-56 56 55.4 55.4 0 0 1-27-7.24A111.71 111.71 0 1 0 288 144zm284.52 97.4C518.29 135.59 410.93 64 288 64S57.68 135.64 3.48 241.41a32.35 32.35 0 0 0 0 29.19C57.71 376.41 165.07 448 288 448s230.32-71.64 284.52-177.41a32.35 32.35 0 0 0 0-29.19zM288 400c-98.65 0-189.09-55-237.93-144C98.91 167 189.34 112 288 112s189.09 55 237.93 144C477.1 345 386.66 400 288 400z"/></svg>&nbsp;<span id="busuanzi_value_page_pv"></span></span>
+        
+    
+    
+</div>
+
+            
+
+            <div class="post-body e-content">
+              <p>本篇主要介绍四种使用 kratos 的例子. 前情透漏, 这一篇的篇幅比较长, 如果已经会用 Kratos 的可以跳过这一节</p>
+<h2 id="http-服务"><a href="#http-服务" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>http 服务</h2>
+<p>http 服务其实就比较简单, 开篇的<code>Golang 大法好 ！！</code>直接就能对外提供 http 服务. http server默认有两个函数<code>howToStart</code>, <code>ping</code>.  关于ping 函数后面再具体看其作用</p>
+<p>如何添加一个新的 api 接口?</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// internal/server/http/server.go
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">initRouter</span><span class="p">(</span><span class="nx">e</span> <span class="o">*</span><span class="nx">bm</span><span class="p">.</span><span class="nx">Engine</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">e</span><span class="p">.</span><span class="nf">Ping</span><span class="p">(</span><span class="nx">ping</span><span class="p">)</span>
+	<span class="nx">g</span> <span class="o">:=</span> <span class="nx">e</span><span class="p">.</span><span class="nf">Group</span><span class="p">(</span><span class="s">&#34;/kratos-demo&#34;</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="nx">g</span><span class="p">.</span><span class="nf">GET</span><span class="p">(</span><span class="s">&#34;/start&#34;</span><span class="p">,</span> <span class="nx">howToStart</span><span class="p">)</span>
+		<span class="nx">g</span><span class="p">.</span><span class="nf">GET</span><span class="p">(</span><span class="s">&#34;/sayHi&#34;</span><span class="p">,</span> <span class="nx">sayHi</span><span class="p">)</span>
+		<span class="nx">g</span><span class="p">.</span><span class="nf">GET</span><span class="p">(</span><span class="s">&#34;/sayHello&#34;</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">bm</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">svc</span><span class="p">.</span><span class="nf">SayHello</span><span class="p">(</span><span class="nx">context</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">pb</span><span class="p">.</span><span class="nx">HelloReq</span><span class="p">{</span>
+				<span class="nx">Name</span><span class="p">:</span> <span class="s">&#34;test&#34;</span><span class="p">,</span>
+			<span class="p">})</span>
+			<span class="nx">context</span><span class="p">.</span><span class="nf">JSON</span><span class="p">(</span><span class="s">&#34;success&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+		<span class="p">})</span>
+	<span class="p">}</span>
+
+	<span class="nx">v2Group</span> <span class="o">:=</span> <span class="nx">e</span><span class="p">.</span><span class="nf">Group</span><span class="p">(</span><span class="s">&#34;/kratos-demo/v2&#34;</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="nx">v2Group</span><span class="p">.</span><span class="nf">GET</span><span class="p">(</span><span class="s">&#34;/sayHi&#34;</span><span class="p">,</span> <span class="nx">sayHi</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">sayHi</span><span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">bm</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">c</span><span class="p">.</span><span class="nf">JSON</span><span class="p">(</span><span class="s">&#34;hi&#34;</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>这里你会不会想所有的 api controller 全部都放在一个 server.go, 后面会不会变得不可维护? 答案肯定的</p>
+<p>解决方案: 在 <code>internal/server/http</code> 目录下创建代表不同功能的文件</p>
+<ol>
+<li>升级不同版本了, 可以v1.go, v2.go,</li>
+<li>负责评论的叫 comment.go</li>
+<li>负责收藏的叫 favorite.go</li>
+</ol>
+<h2 id="grpc-服务"><a href="#grpc-服务" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>grpc 服务</h2>
+<p>kratos-demo 默认是是支持 grpc 服务的, gprc 是需要 protobuf 支持的. 工程所有的 protobuf 应该都放在 api 目录下.</p>
+<p>通过<code>kratos tool protoc --grpc --bm api.proto</code> 生成两个文件 <code>api.pb.go</code>, <code>api.bm.go</code></p>
+<p>protobuf 的内容:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-protobuf" data-lang="protobuf"><span class="kd">service</span> <span class="n">Demo</span> <span class="p">{</span><span class="err">
+</span><span class="err"></span>  <span class="k">rpc</span> <span class="n">Ping</span><span class="p">(</span><span class="o">.</span><span class="n">google.protobuf.Empty</span><span class="p">)</span> <span class="k">returns</span> <span class="p">(</span><span class="o">.</span><span class="n">google.protobuf.Empty</span><span class="p">);</span><span class="err">
+</span><span class="err"></span>  <span class="k">rpc</span> <span class="n">SayHello</span><span class="p">(</span><span class="n">HelloReq</span><span class="p">)</span> <span class="k">returns</span> <span class="p">(</span><span class="o">.</span><span class="n">google.protobuf.Empty</span><span class="p">);</span><span class="err">
+</span><span class="err"></span>  <span class="k">rpc</span> <span class="n">SayHelloURL</span><span class="p">(</span><span class="n">HelloReq</span><span class="p">)</span> <span class="k">returns</span> <span class="p">(</span><span class="n">HelloResp</span><span class="p">)</span> <span class="p">{</span><span class="err">
+</span><span class="err"></span>    <span class="k">option</span> <span class="p">(</span><span class="n">google.api.http</span><span class="p">)</span> <span class="o">=</span> <span class="p">{</span><span class="err">
+</span><span class="err"></span>      <span class="n">get</span><span class="o">:</span> <span class="s">&#34;/kratos-demo/say_hello&#34;</span><span class="err">
+</span><span class="err"></span>    <span class="p">};</span><span class="err">
+</span><span class="err"></span>  <span class="p">};</span><span class="err">
+</span><span class="err"></span><span class="p">}</span><span class="err">
+</span></code></pre></td></tr></table></div>
+</div>
+</div><p>当然要想使用 grpc 的话需要实现上面三个函数. kratos-demo 默认是实现这三个方法的, 不过在<code>internal/service/service.go</code>里面</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// SayHello grpc demo func.
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">s</span> <span class="o">*</span><span class="nx">Service</span><span class="p">)</span> <span class="nf">SayHello</span><span class="p">(</span><span class="nx">ctx</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">req</span> <span class="o">*</span><span class="nx">pb</span><span class="p">.</span><span class="nx">HelloReq</span><span class="p">)</span> <span class="p">(</span><span class="nx">reply</span> <span class="o">*</span><span class="nx">empty</span><span class="p">.</span><span class="nx">Empty</span><span class="p">,</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">reply</span> <span class="p">=</span> <span class="nb">new</span><span class="p">(</span><span class="nx">empty</span><span class="p">.</span><span class="nx">Empty</span><span class="p">)</span>
+	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;hello %s&#34;</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">Name</span><span class="p">)</span>
+	<span class="k">return</span>
+<span class="p">}</span>
+
+<span class="c1">// SayHelloURL bm demo func.
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">s</span> <span class="o">*</span><span class="nx">Service</span><span class="p">)</span> <span class="nf">SayHelloURL</span><span class="p">(</span><span class="nx">ctx</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">req</span> <span class="o">*</span><span class="nx">pb</span><span class="p">.</span><span class="nx">HelloReq</span><span class="p">)</span> <span class="p">(</span><span class="nx">reply</span> <span class="o">*</span><span class="nx">pb</span><span class="p">.</span><span class="nx">HelloResp</span><span class="p">,</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">reply</span> <span class="p">=</span> <span class="o">&amp;</span><span class="nx">pb</span><span class="p">.</span><span class="nx">HelloResp</span><span class="p">{</span>
+		<span class="nx">Content</span><span class="p">:</span> <span class="s">&#34;hello &#34;</span> <span class="o">+</span> <span class="nx">req</span><span class="p">.</span><span class="nx">Name</span><span class="p">,</span>
+	<span class="p">}</span>
+	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;hello url %s&#34;</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">Name</span><span class="p">)</span>
+	<span class="k">return</span>
+<span class="p">}</span>
+
+<span class="c1">// Ping ping the resource.
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">s</span> <span class="o">*</span><span class="nx">Service</span><span class="p">)</span> <span class="nf">Ping</span><span class="p">(</span><span class="nx">ctx</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">e</span> <span class="o">*</span><span class="nx">empty</span><span class="p">.</span><span class="nx">Empty</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">empty</span><span class="p">.</span><span class="nx">Empty</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">empty</span><span class="p">.</span><span class="nx">Empty</span><span class="p">{},</span> <span class="nx">s</span><span class="p">.</span><span class="nx">dao</span><span class="p">.</span><span class="nf">Ping</span><span class="p">(</span><span class="nx">ctx</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>我们要注意的是, <code>internal/server/grpc/server.go</code>并没有调用这些方法的地方, grpc是如何调用起来的呢?</p>
+<p>我们上一文章说到, kratos 使用 wire 依赖注入将各种组件组合到一块</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// wire_gen.go
+</span><span class="c1"></span><span class="nx">server</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">grpc</span><span class="p">.</span><span class="nf">New</span><span class="p">(</span><span class="nx">serviceService</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+	<span class="o">...</span>
+	<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">err</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>这里的 <code>serviceService</code> 就是 <code>internal/service/service.go</code>的 <code>Service</code></p>
+<p>这里推荐使用 <a href="https://github.com/uw-labs/bloomrpc" target="_blank" rel="noopener">bloomrpc</a> 来验证 grpc 接口</p>
+<p><img src="https://images.haohongfan.com/kratos-demo-bloomrpc.png" alt=""></p>
+<h2 id="http-调用-http-服务"><a href="#http-调用-http-服务" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>http 调用 http 服务</h2>
+<p>不管 http 调用 http, 还是 http 调用 grpc, 官方 wiki 并没有过多的提及. 就看到这么<a href="https://github.com/go-kratos/kratos/blob/master/doc/wiki-cn/warden-quickstart.md#client%E8%B0%83%E7%94%A8" target="_blank" rel="noopener">一句话</a>, 更加坑的地方在于找遍所有的地方竟然没有 http client 的配置文件的格式</p>
+<blockquote>
+<p>请进入internal/dao方法内，一般对资源的处理都会在这一层封装。对于client端，前提必须有对应proto文件生成的代码，那么有两种选择：</p>
+<ol>
+<li>拷贝proto文件到自己项目下并且执行代码生成</li>
+<li>直接import服务端的api package</li>
+</ol>
+</blockquote>
+<p>下面看 http 如何调用 http. 假设有一个策略服务(biz)通过角色服务(up)的<code>check/role</code>判断某个用户的角色是否满足</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kratos new biz // 创建策略服务
+kratos new up  // 创建角色服务
+</code></pre></td></tr></table></div>
+</div>
+</div><h5 id="up"><a href="#up" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>up</h5>
+<p>proto文件, <code>kratos tool protoc --grpc --bm api.proto</code> 生成对应的 go 文件</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-proto" data-lang="proto"><span class="c1">// api/api.proto
+</span><span class="c1"></span><span class="n">syntax</span> <span class="o">=</span> <span class="s">&#34;proto3&#34;</span><span class="p">;</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="k">import</span> <span class="s">&#34;google/protobuf/empty.proto&#34;</span><span class="p">;</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="kn">package</span> <span class="nn">up</span><span class="o">.</span><span class="n">service.v1</span><span class="p">;</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="k">option</span> <span class="n">go_package</span> <span class="o">=</span> <span class="s">&#34;api&#34;</span><span class="p">;</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="kd">service</span> <span class="n">Up</span> <span class="p">{</span><span class="err">
+</span><span class="err"></span>    <span class="k">rpc</span> <span class="n">Ping</span><span class="p">(</span><span class="o">.</span><span class="n">google.protobuf.Empty</span><span class="p">)</span> <span class="k">returns</span> <span class="p">(</span><span class="o">.</span><span class="n">google.protobuf.Empty</span><span class="p">);</span><span class="err">
+</span><span class="err"></span>    <span class="k">rpc</span> <span class="n">CheckRole</span><span class="p">(</span><span class="n">CheckUpReq</span><span class="p">)</span> <span class="k">returns</span> <span class="p">(</span><span class="n">CheckUpResp</span><span class="p">);</span><span class="err">
+</span><span class="err"></span><span class="p">}</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="kd">message</span> <span class="nc">CheckUpReq</span> <span class="p">{</span><span class="err">
+</span><span class="err"></span>    <span class="kt">int32</span> <span class="n">Role</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span><span class="err">
+</span><span class="err"></span><span class="p">}</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="kd">message</span> <span class="nc">CheckUpResp</span> <span class="p">{</span><span class="err">
+</span><span class="err"></span>    <span class="kt">bool</span> <span class="n">Yes</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span><span class="err">
+</span><span class="err"></span><span class="p">}</span><span class="err">
+</span></code></pre></td></tr></table></div>
+</div>
+</div><p>在 <code>internal/service/service.go</code>里面添加下面代码</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">s</span> <span class="o">*</span><span class="nx">Service</span><span class="p">)</span> <span class="nf">CheckRole</span><span class="p">(</span><span class="nx">ctx</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">req</span> <span class="o">*</span><span class="nx">pb</span><span class="p">.</span><span class="nx">CheckUpReq</span><span class="p">)</span> <span class="p">(</span><span class="nx">resp</span> <span class="o">*</span><span class="nx">pb</span><span class="p">.</span><span class="nx">CheckUpResp</span><span class="p">,</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">Infoc</span><span class="p">(</span><span class="nx">ctx</span><span class="p">,</span> <span class="s">&#34;check role:%d&#34;</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">Role</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">req</span><span class="p">.</span><span class="nx">Role</span> <span class="o">==</span> <span class="mi">10</span> <span class="p">{</span>
+		<span class="nx">resp</span> <span class="p">=</span> <span class="o">&amp;</span><span class="nx">pb</span><span class="p">.</span><span class="nx">CheckUpResp</span><span class="p">{</span><span class="nx">Yes</span><span class="p">:</span> <span class="kc">true</span><span class="p">}</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+		<span class="nx">resp</span> <span class="p">=</span> <span class="o">&amp;</span><span class="nx">pb</span><span class="p">.</span><span class="nx">CheckUpResp</span><span class="p">{</span><span class="nx">Yes</span><span class="p">:</span> <span class="kc">false</span><span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span>
+<span class="p">}</span>
+
+<span class="c1">// Ping ping the resource.
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">s</span> <span class="o">*</span><span class="nx">Service</span><span class="p">)</span> <span class="nf">Ping</span><span class="p">(</span><span class="nx">ctx</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">e</span> <span class="o">*</span><span class="nx">empty</span><span class="p">.</span><span class="nx">Empty</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">empty</span><span class="p">.</span><span class="nx">Empty</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">empty</span><span class="p">.</span><span class="nx">Empty</span><span class="p">{},</span> <span class="nx">s</span><span class="p">.</span><span class="nx">dao</span><span class="p">.</span><span class="nf">Ping</span><span class="p">(</span><span class="nx">ctx</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>在 <code>internal/server/http/server.go</code>里面添加如下代码</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">roleParam</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">RoleId</span> <span class="kt">int32</span> <span class="s">`form:&#34;roleId&#34;`</span>
+<span class="p">}</span>
+
+<span class="kd">type</span> <span class="nx">roleResult</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Yes</span> <span class="kt">bool</span> <span class="s">`json:&#34;yes&#34;`</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">checkRole</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">bm</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">input</span> <span class="nx">roleParam</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">context</span><span class="p">.</span><span class="nf">Bind</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">input</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">context</span><span class="p">.</span><span class="nf">JSON</span><span class="p">(</span><span class="kc">nil</span><span class="p">,</span> <span class="nx">errors</span><span class="p">.</span><span class="nf">New</span><span class="p">(</span><span class="s">&#34;client param error&#34;</span><span class="p">))</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+
+	<span class="nx">resp</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">svc</span><span class="p">.</span><span class="nf">CheckRole</span><span class="p">(</span><span class="nx">context</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">pb</span><span class="p">.</span><span class="nx">CheckUpReq</span><span class="p">{</span><span class="nx">Role</span><span class="p">:</span> <span class="nx">input</span><span class="p">.</span><span class="nx">RoleId</span><span class="p">})</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">context</span><span class="p">.</span><span class="nf">JSON</span><span class="p">(</span><span class="kc">nil</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="nx">res</span> <span class="o">:=</span> <span class="nx">roleResult</span><span class="p">{</span><span class="nx">Yes</span><span class="p">:</span> <span class="nx">resp</span><span class="p">.</span><span class="nx">Yes</span><span class="p">}</span>
+	<span class="nx">context</span><span class="p">.</span><span class="nf">JSON</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>up服务已经可以了, 接下来看 biz 如何调用 up</p>
+<h5 id="biz"><a href="#biz" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>biz</h5>
+<p>在<code>configs/http.html</code>里面添加下面配置</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[Server]
+    addr = &#34;0.0.0.0:8020&#34;
+    timeout = &#34;1s&#34;
+[Client]
+    dial = &#34;2s&#34;
+    timeout = &#34;100s&#34;
+    keepAlive = &#34;60s&#34;
+    timer = 1000
+    [httpClient.breaker]
+    window  = &#34;10s&#34;
+    sleep   = &#34;2000ms&#34;
+    bucket  = 10
+    ratio   = 0.5
+    request = 100
+</code></pre></td></tr></table></div>
+</div>
+</div><p>在 <code>internal/dao/http.go</code>下添加下面代码</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kn">package</span> <span class="nx">dao</span>
+
+<span class="kn">import</span> <span class="p">(</span>
+	<span class="s">&#34;github.com/go-kratos/kratos/pkg/conf/paladin&#34;</span>
+	<span class="s">&#34;github.com/go-kratos/kratos/pkg/net/http/blademaster&#34;</span>
+<span class="p">)</span>
+
+<span class="kd">func</span> <span class="nf">NewHttpClient</span><span class="p">()</span> <span class="o">*</span><span class="nx">blademaster</span><span class="p">.</span><span class="nx">Client</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">cfg</span> <span class="nx">blademaster</span><span class="p">.</span><span class="nx">ClientConfig</span>
+	<span class="kd">var</span> <span class="nx">ct</span> <span class="nx">paladin</span><span class="p">.</span><span class="nx">TOML</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">paladin</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="s">&#34;http.toml&#34;</span><span class="p">).</span><span class="nf">Unmarshal</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">ct</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">nil</span>
+	<span class="p">}</span>
+
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ct</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="s">&#34;Client&#34;</span><span class="p">).</span><span class="nf">UnmarshalTOML</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">cfg</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">nil</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">blademaster</span><span class="p">.</span><span class="nf">NewClient</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">cfg</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>在 <code>internal/dao/dao.go</code>里面添加下面代码</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">dao</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">db</span>         <span class="o">*</span><span class="nx">sql</span><span class="p">.</span><span class="nx">DB</span>
+	<span class="nx">redis</span>      <span class="o">*</span><span class="nx">redis</span><span class="p">.</span><span class="nx">Redis</span>
+	<span class="nx">mc</span>         <span class="o">*</span><span class="nx">memcache</span><span class="p">.</span><span class="nx">Memcache</span>
+	<span class="nx">cache</span>      <span class="o">*</span><span class="nx">fanout</span><span class="p">.</span><span class="nx">Fanout</span>
+	<span class="nx">demoExpire</span> <span class="kt">int32</span>
+	<span class="nx">rpcClient</span>  <span class="nx">api</span><span class="p">.</span><span class="nx">UpClient</span>
+	<span class="nx">httpClient</span> <span class="nx">blademaster</span><span class="p">.</span><span class="nx">Client</span>
+<span class="p">}</span>
+
+<span class="c1">// ....
+</span><span class="c1"></span>
+<span class="kd">var</span> <span class="nx">grpcClient</span> <span class="nx">api</span><span class="p">.</span><span class="nx">UpClient</span>
+<span class="nx">grpcClient</span><span class="p">,</span> <span class="nx">err</span> <span class="p">=</span> <span class="nf">NewGrpcClient</span><span class="p">()</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+	<span class="k">return</span>
+<span class="p">}</span>
+
+<span class="nx">d</span> <span class="p">=</span> <span class="o">&amp;</span><span class="nx">dao</span><span class="p">{</span>
+	<span class="nx">db</span><span class="p">:</span>         <span class="nx">db</span><span class="p">,</span>
+	<span class="nx">redis</span><span class="p">:</span>      <span class="nx">r</span><span class="p">,</span>
+	<span class="nx">mc</span><span class="p">:</span>         <span class="nx">mc</span><span class="p">,</span>
+	<span class="nx">cache</span><span class="p">:</span>      <span class="nx">fanout</span><span class="p">.</span><span class="nf">New</span><span class="p">(</span><span class="s">&#34;cache&#34;</span><span class="p">),</span>
+	<span class="nx">demoExpire</span><span class="p">:</span> <span class="nb">int32</span><span class="p">(</span><span class="nx">time</span><span class="p">.</span><span class="nf">Duration</span><span class="p">(</span><span class="nx">cfg</span><span class="p">.</span><span class="nx">DemoExpire</span><span class="p">)</span> <span class="o">/</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">),</span>
+	<span class="nx">rpcClient</span><span class="p">:</span>  <span class="nx">grpcClient</span><span class="p">,</span>
+	<span class="nx">httpClient</span><span class="p">:</span> <span class="o">*</span><span class="nf">NewHttpClient</span><span class="p">(),</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">d</span> <span class="o">*</span><span class="nx">dao</span><span class="p">)</span> <span class="nf">CheckRole</span><span class="p">(</span><span class="nx">ctx</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">req</span> <span class="o">*</span><span class="nx">api</span><span class="p">.</span><span class="nx">CheckUpReq</span><span class="p">)</span> <span class="p">(</span><span class="nx">resp</span> <span class="o">*</span><span class="nx">api</span><span class="p">.</span><span class="nx">CheckUpResp</span><span class="p">,</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">params</span> <span class="o">:=</span> <span class="nx">url</span><span class="p">.</span><span class="nx">Values</span><span class="p">{}</span>
+	<span class="nx">params</span><span class="p">.</span><span class="nf">Set</span><span class="p">(</span><span class="s">&#34;roleId&#34;</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;%d&#34;</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">Role</span><span class="p">))</span>
+
+	<span class="kd">var</span> <span class="nx">resp1</span> <span class="kd">struct</span> <span class="p">{</span>
+		<span class="nx">Code</span> <span class="kt">int</span>        <span class="s">`json:&#34;code&#34;`</span>
+		<span class="nx">Data</span> <span class="nx">roleResult</span> <span class="s">`json:&#34;data&#34;`</span>
+	<span class="p">}</span>
+
+	<span class="nx">upUrl</span> <span class="o">:=</span> <span class="s">&#34;http://127.0.0.1:8000/up/check_role&#34;</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">d</span><span class="p">.</span><span class="nx">httpClient</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nf">Background</span><span class="p">(),</span> <span class="nx">upUrl</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="nx">params</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">resp1</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">err</span>
+	<span class="p">}</span>
+
+	<span class="k">if</span> <span class="nx">resp1</span><span class="p">.</span><span class="nx">Code</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="nx">err</span> <span class="p">=</span> <span class="nx">errors</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;up url(%s) res(%+v) err(%+v)&#34;</span><span class="p">,</span> <span class="nx">upUrl</span><span class="o">+</span><span class="s">&#34;?&#34;</span><span class="o">+</span><span class="nx">params</span><span class="p">.</span><span class="nf">Encode</span><span class="p">(),</span> <span class="nx">resp</span><span class="p">,</span> <span class="nx">ecode</span><span class="p">.</span><span class="nf">Int</span><span class="p">(</span><span class="nx">resp1</span><span class="p">.</span><span class="nx">Code</span><span class="p">))</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+
+	<span class="nx">resp</span> <span class="p">=</span> <span class="o">&amp;</span><span class="nx">api</span><span class="p">.</span><span class="nx">CheckUpResp</span><span class="p">{</span>
+		<span class="nx">Yes</span><span class="p">:</span> <span class="nx">resp1</span><span class="p">.</span><span class="nx">Data</span><span class="p">.</span><span class="nx">Yes</span><span class="p">,</span>
+	<span class="p">}</span>
+	<span class="k">return</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>在 <code>internal/service/service.go</code>下添加</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">//...
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">s</span> <span class="o">*</span><span class="nx">Service</span><span class="p">)</span> <span class="nf">CheckRole</span><span class="p">(</span><span class="nx">ctx</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">req</span> <span class="o">*</span><span class="nx">pb</span><span class="p">.</span><span class="nx">CheckUpReq</span><span class="p">)</span> <span class="p">(</span><span class="nx">resp</span> <span class="o">*</span><span class="nx">pb</span><span class="p">.</span><span class="nx">CheckUpResp</span><span class="p">,</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">Infoc</span><span class="p">(</span><span class="nx">ctx</span><span class="p">,</span> <span class="s">&#34;check role:%d&#34;</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">Role</span><span class="p">)</span>
+	<span class="nx">resp</span><span class="p">,</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">s</span><span class="p">.</span><span class="nx">dao</span><span class="p">.</span><span class="nf">CheckRole</span><span class="p">(</span><span class="nx">ctx</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span>
+	<span class="k">return</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>在 <code>internal/server/http/server.go</code>里面添加</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">initRouter</span><span class="p">(</span><span class="nx">e</span> <span class="o">*</span><span class="nx">bm</span><span class="p">.</span><span class="nx">Engine</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">e</span><span class="p">.</span><span class="nf">Ping</span><span class="p">(</span><span class="nx">ping</span><span class="p">)</span>
+	<span class="nx">g</span> <span class="o">:=</span> <span class="nx">e</span><span class="p">.</span><span class="nf">Group</span><span class="p">(</span><span class="s">&#34;/zbbiz&#34;</span><span class="p">)</span>
+	<span class="p">{</span>
+		<span class="nx">g</span><span class="p">.</span><span class="nf">GET</span><span class="p">(</span><span class="s">&#34;/check_role&#34;</span><span class="p">,</span> <span class="nx">checkRole</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">ping</span><span class="p">(</span><span class="nx">ctx</span> <span class="o">*</span><span class="nx">bm</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+<span class="p">}</span>
+
+<span class="kd">type</span> <span class="nx">roleParam</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">RoleId</span> <span class="kt">int32</span> <span class="s">`form:&#34;roleId&#34;`</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">checkRole</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">bm</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">input</span> <span class="nx">roleParam</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">context</span><span class="p">.</span><span class="nf">Bind</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">input</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">context</span><span class="p">.</span><span class="nf">JSON</span><span class="p">(</span><span class="kc">nil</span><span class="p">,</span> <span class="nx">ecode</span><span class="p">.</span><span class="nx">RequestErr</span><span class="p">)</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+
+	<span class="nx">resp</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">svc</span><span class="p">.</span><span class="nf">CheckRole</span><span class="p">(</span><span class="nx">context</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">pb</span><span class="p">.</span><span class="nx">CheckUpReq</span><span class="p">{</span><span class="nx">Role</span><span class="p">:</span> <span class="nx">input</span><span class="p">.</span><span class="nx">RoleId</span><span class="p">})</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">context</span><span class="p">.</span><span class="nf">JSON</span><span class="p">(</span><span class="kc">nil</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+
+	<span class="k">if</span> <span class="nx">resp</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">context</span><span class="p">.</span><span class="nf">JSON</span><span class="p">(</span><span class="kc">nil</span><span class="p">,</span> <span class="nx">errors</span><span class="p">.</span><span class="nf">New</span><span class="p">(</span><span class="s">&#34;resp is nil&#34;</span><span class="p">))</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+
+	<span class="nx">cr</span> <span class="o">:=</span> <span class="nx">model</span><span class="p">.</span><span class="nx">CheckRole</span><span class="p">{</span>
+		<span class="nx">Yes</span><span class="p">:</span> <span class="nx">resp</span><span class="p">.</span><span class="nx">Yes</span><span class="p">,</span>
+	<span class="p">}</span>
+	<span class="nx">context</span><span class="p">.</span><span class="nf">JSON</span><span class="p">(</span><span class="nx">cr</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>至此, http 调用 http 已经大功告成 !</p>
+<p><img src="https://images.haohongfan.com/http-http.png" alt="">
+<img src="https://images.haohongfan.com/http-up.png" alt=""></p>
+<h2 id="http-调用-grpc-服务"><a href="#http-调用-grpc-服务" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>http 调用 grpc 服务</h2>
+<p>Grpc 的话, 其实 <a href="https://github.com/go-kratos/kratos/blob/master/doc/wiki-cn/warden-resolver.md" target="_blank" rel="noopener">wiki</a>基本上说明白了怎么用了. 唯一要注意的地方 <strong>使用discovery</strong> 来做服务发现时, 切记要先去安装<a href="https://github.com/bilibili/discovery" target="_blank" rel="noopener">discovery</a>, 看<a href="https://github.com/go-kratos/kratos/issues/506" target="_blank" rel="noopener">issue</a>问为何启动报错, 多半是这个问题</p>
+<p>我这里就先使用 etcd 来做服务发现. 如果安装 etcd 就略过了</p>
+<h3 id="up-注册服务"><a href="#up-注册服务" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>up 注册服务</h3>
+<p>在 <code>cmd/main.go</code> 里面添加下面代码, 其他的保持跟 http 一样即可</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="nx">etcdV3Conf</span> <span class="o">:=</span> <span class="nx">clientv3</span><span class="p">.</span><span class="nx">Config</span><span class="p">{</span>
+	<span class="nx">Endpoints</span><span class="p">:</span>   <span class="p">[]</span><span class="kt">string</span><span class="p">{</span><span class="s">&#34;127.0.0.1:2380&#34;</span><span class="p">},</span>
+	<span class="nx">DialTimeout</span><span class="p">:</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Duration</span><span class="p">(</span><span class="mi">30</span><span class="p">),</span>
+	<span class="nx">DialOptions</span><span class="p">:</span> <span class="p">[]</span><span class="nx">grpc</span><span class="p">.</span><span class="nx">DialOption</span><span class="p">{</span><span class="nx">grpc</span><span class="p">.</span><span class="nf">WithBlock</span><span class="p">()},</span>
+<span class="p">}</span>
+
+<span class="nx">etcdBuilder</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">etcd</span><span class="p">.</span><span class="nf">New</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">etcdV3Conf</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+	<span class="nb">panic</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="nx">ip</span> <span class="o">:=</span> <span class="s">&#34;0.0.0.0&#34;</span>
+<span class="nx">port</span> <span class="o">:=</span> <span class="s">&#34;9002&#34;</span>
+<span class="nx">hn</span><span class="p">,</span> <span class="nx">_</span> <span class="o">:=</span> <span class="nx">os</span><span class="p">.</span><span class="nf">Hostname</span><span class="p">()</span>
+<span class="nx">ins</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">naming</span><span class="p">.</span><span class="nx">Instance</span><span class="p">{</span>
+	<span class="nx">Zone</span><span class="p">:</span>     <span class="s">&#34;test&#34;</span><span class="p">,</span>
+	<span class="nx">Env</span><span class="p">:</span>      <span class="s">&#34;dev&#34;</span><span class="p">,</span>
+	<span class="nx">AppID</span><span class="p">:</span>    <span class="s">&#34;demo.service.up&#34;</span><span class="p">,</span>
+	<span class="nx">Hostname</span><span class="p">:</span> <span class="nx">hn</span><span class="p">,</span>
+	<span class="nx">Addrs</span><span class="p">:</span> <span class="p">[]</span><span class="kt">string</span><span class="p">{</span>
+		<span class="s">&#34;grpc://&#34;</span> <span class="o">+</span> <span class="nx">ip</span> <span class="o">+</span> <span class="s">&#34;:&#34;</span> <span class="o">+</span> <span class="nx">port</span><span class="p">,</span>
+	<span class="p">},</span>
+<span class="p">}</span>
+
+<span class="nx">cancel</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">etcdBuilder</span><span class="p">.</span><span class="nf">Register</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nf">Background</span><span class="p">(),</span> <span class="nx">ins</span><span class="p">)</span>
+<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+	<span class="nb">panic</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+<span class="p">}</span>
+<span class="k">defer</span> <span class="nf">cancel</span><span class="p">()</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><h3 id="客户端调用"><a href="#客户端调用" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>客户端调用</h3>
+<p>在 <code>configs/grpc.toml</code> 添加下面内容</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[Server]
+    addr = &#34;0.0.0.0:9005&#34;
+    timeout = &#34;1s&#34;
+
+[Client]
+     timeout = &#34;1s&#34;
+     timer = 1000
+</code></pre></td></tr></table></div>
+</div>
+</div><p>在 <code>internal/dao</code> 下添加 grpc.go</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">//const target = &#34;direct://default/127.0.0.1:9002&#34;
+</span><span class="c1"></span>
+<span class="kd">const</span> <span class="nx">AppID</span> <span class="p">=</span> <span class="s">&#34;demo.service.up&#34;</span> <span class="c1">// NOTE: example
+</span><span class="c1"></span>
+<span class="kd">func</span> <span class="nf">init</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">etcdV3Conf</span> <span class="o">:=</span> <span class="nx">clientv3</span><span class="p">.</span><span class="nx">Config</span><span class="p">{</span>
+		<span class="nx">Endpoints</span><span class="p">:</span>   <span class="p">[]</span><span class="kt">string</span><span class="p">{</span><span class="s">&#34;127.0.0.1:2380&#34;</span><span class="p">},</span>
+		<span class="nx">DialTimeout</span><span class="p">:</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Duration</span><span class="p">(</span><span class="mi">30</span><span class="p">),</span>
+		<span class="nx">DialOptions</span><span class="p">:</span> <span class="p">[]</span><span class="nx">grpc</span><span class="p">.</span><span class="nx">DialOption</span><span class="p">{</span><span class="nx">grpc</span><span class="p">.</span><span class="nf">WithBlock</span><span class="p">()},</span>
+	<span class="p">}</span>
+	<span class="nx">resolver</span><span class="p">.</span><span class="nf">Register</span><span class="p">(</span><span class="nx">etcd</span><span class="p">.</span><span class="nf">Builder</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">etcdV3Conf</span><span class="p">))</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">NewGrpcClient</span><span class="p">()</span> <span class="p">(</span><span class="nx">grpcClient</span> <span class="nx">api</span><span class="p">.</span><span class="nx">UpClient</span><span class="p">,</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">cfg</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">warden</span><span class="p">.</span><span class="nx">ClientConfig</span><span class="p">{}</span>
+	<span class="kd">var</span> <span class="nx">ct</span> <span class="nx">paladin</span><span class="p">.</span><span class="nx">TOML</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">paladin</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="s">&#34;grpc.toml&#34;</span><span class="p">).</span><span class="nf">Unmarshal</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">ct</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">err</span>
+	<span class="p">}</span>
+
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ct</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="s">&#34;Client&#34;</span><span class="p">).</span><span class="nf">UnmarshalTOML</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">cfg</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">err</span>
+	<span class="p">}</span>
+
+	<span class="nx">client</span> <span class="o">:=</span> <span class="nx">warden</span><span class="p">.</span><span class="nf">NewClient</span><span class="p">(</span><span class="nx">cfg</span><span class="p">)</span>
+	<span class="c1">//cc, err := client.Dial(context.Background(), target)
+</span><span class="c1"></span>	<span class="c1">//cc, err := client.Dial(context.Background(), &#34;discovery://default/&#34;+AppID)
+</span><span class="c1"></span>	<span class="nx">cc</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">client</span><span class="p">.</span><span class="nf">Dial</span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nf">Background</span><span class="p">(),</span> <span class="s">&#34;etcd://default/&#34;</span><span class="o">+</span><span class="nx">AppID</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">err</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">api</span><span class="p">.</span><span class="nf">NewUpClient</span><span class="p">(</span><span class="nx">cc</span><span class="p">),</span> <span class="kc">nil</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>在 <code>internal/dao/dao.go</code>添加下面内容</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">dao</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">db</span>         <span class="o">*</span><span class="nx">sql</span><span class="p">.</span><span class="nx">DB</span>
+	<span class="nx">redis</span>      <span class="o">*</span><span class="nx">redis</span><span class="p">.</span><span class="nx">Redis</span>
+	<span class="nx">mc</span>         <span class="o">*</span><span class="nx">memcache</span><span class="p">.</span><span class="nx">Memcache</span>
+	<span class="nx">cache</span>      <span class="o">*</span><span class="nx">fanout</span><span class="p">.</span><span class="nx">Fanout</span>
+	<span class="nx">demoExpire</span> <span class="kt">int32</span>
+	<span class="nx">rpcClient</span>  <span class="nx">api</span><span class="p">.</span><span class="nx">UpClient</span>
+	<span class="nx">httpClient</span> <span class="nx">blademaster</span><span class="p">.</span><span class="nx">Client</span>
+<span class="p">}</span>
+
+<span class="c1">// ...
+</span><span class="c1"></span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">d</span> <span class="o">*</span><span class="nx">dao</span><span class="p">)</span> <span class="nf">CheckRole</span><span class="p">(</span><span class="nx">ctx</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Context</span><span class="p">,</span> <span class="nx">req</span> <span class="o">*</span><span class="nx">api</span><span class="p">.</span><span class="nx">CheckUpReq</span><span class="p">)</span> <span class="p">(</span><span class="nx">resp</span> <span class="o">*</span><span class="nx">api</span><span class="p">.</span><span class="nx">CheckUpResp</span><span class="p">,</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">resp</span><span class="p">,</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">d</span><span class="p">.</span><span class="nx">rpcClient</span><span class="p">.</span><span class="nf">CheckRole</span><span class="p">(</span><span class="nx">ctx</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span>
+	<span class="k">return</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>其他的跟 http 的调用保持一致, 至此 http 调用 grpc 基本完事</p>
+<p><img src="https://images.haohongfan.com/http-grpc.png" alt=""></p>
+<h2 id="总结"><a href="#总结" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>总结</h2>
+<p>本篇文章以 demo 为主, 所有的代码都会传至 github: <a href="https://github.com/georgehao/kratos-demo" target="_blank" rel="noopener">https://github.com/georgehao/kratos-demo</a></p>
+
+            </div>
+
+            
+    
+    
+        <ul class="post-copyright">
+            <li class="copyright-item author"><span class="copyright-item-text">作者</span>：<a href="https://www.haohongfan.com/" class="p-author h-card" target="_blank" rel="noopener">haohongfan</a></li>
+            
+                
+                
+                
+                
+                <li class="copyright-item link"><span class="copyright-item-text">链接</span>：<a href="/post/2020-05-16-kratos-demo/" target="_blank" rel="noopener">https://www.haohongfan.com/post/2020-05-16-kratos-demo/</a></li>
+            
+            <li class="copyright-item license"><span class="copyright-item-text">许可</span>：<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></li>
+            
+        </ul>
+    
+
+
+			<div>
+				<img src="https://images.haohongfan.com/hhf11.png" alt="some_text"> 
+			</div>
+
+        </article>
+
+        
+
+        
+    <div class="updated-badge-container">
+        <span title="Updated @ 2020-05-16 10:14:07 CST" style="cursor:help">
+
+<svg xmlns="http://www.w3.org/2000/svg" width="130" height="20" class="updated-badge"><linearGradient id="b" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="a"><rect width="130" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#a)"><path class="updated-badge-left" d="M0 0h55v20H0z"/><path class="updated-badge-right" d="M55 0h75v20H55z"/><path fill="url(#b)" d="M0 0h130v20H0z"/></g><g fill="#fff" text-anchor="middle" font-size="110"><text x="285" y="150" fill="#010101" fill-opacity=".3" textLength="450" transform="scale(.1)">updated</text><text x="285" y="140" textLength="450" transform="scale(.1)">updated</text><text x="915" y="150" fill="#010101" fill-opacity=".3" textLength="650" transform="scale(.1)">2020-05-16</text><text x="915" y="140" textLength="650" transform="scale(.1)">2020-05-16</text></g></svg>
+        </span></div>
+
+
+
+        
+
+
+        
+
+
+        
+    
+    
+        <div class="related-posts">
+            <h2 class="related-title">相关文章：<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon related-icon"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"/></svg></h2>
+            <ul class="related-list">
+                
+                    <li class="related-item">
+                        <a href="/post/2020-07-05-bbr/" class="related-link">限流器系列(3)--自适应限流</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/post/2020-06-30-token-bucket/" class="related-link">限流器系列(2) -- Token Bucket 令牌桶</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/post/2020-06-27-leaky-bucket/" class="related-link">限流器系列(1) -- Leaky Bucket 漏斗桶</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/post/2020-06-09-kratos-log/" class="related-link">Bilibili Kratos 框架源码分析(4) -- Kratos Log</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/post/2020-05-22-kratos-fanout/" class="related-link">Bilibili Kratos 框架源码分析(3) -- fanout异步</a>
+                    </li>
+                
+            </ul>
+        </div>
+    
+
+
+
+        
+    
+        <div class="post-tags">
+            
+                
+                
+                
+                
+                    
+                    <a href="/tags/golang/" rel="tag" class="post-tags-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon tag-icon"><path d="M0 252.118V48C0 21.49 21.49 0 48 0h204.118a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882L293.823 497.941c-18.745 18.745-49.137 18.745-67.882 0L14.059 286.059A48 48 0 0 1 0 252.118zM112 64c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48z"/></svg>golang</a>
+                
+            
+                
+                
+                
+                
+                    
+                    <a href="/tags/kratos/" rel="tag" class="post-tags-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon tag-icon"><path d="M0 252.118V48C0 21.49 21.49 0 48 0h204.118a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882L293.823 497.941c-18.745 18.745-49.137 18.745-67.882 0L14.059 286.059A48 48 0 0 1 0 252.118zM112 64c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48z"/></svg>kratos</a>
+                
+            
+        </div>
+    
+
+
+
+        
+
+
+        
+
+
+        
+    
+        
+        
+    
+    
+    
+    
+        <ul class="post-nav">
+            
+                <li class="post-nav-prev">
+                    <a href="/post/2020-05-22-kratos-fanout/" rel="prev">&lt; Bilibili Kratos 框架源码分析(3) -- fanout异步</a>
+                </li>
+            
+            
+                <li class="post-nav-next">
+                    <a href="/post/2020-05-08-kratos-flow/" rel="next">Bilibili Kratos 框架源码分析(1) -- 启动流程 &gt;</a>
+                </li>
+            
+        </ul>
+    
+
+
+
+        
+    
+
+        <div class="load-comments">
+            <div id="load-comments">加载评论</div>
+        </div>
+
+        
+
+        
+
+        
+            <div id="utterances"></div>
+        
+
+    
+
+
+
+    </div>
+</main>
+
+
+            
+    <div id="back-to-top" class="back-to-top">
+        <a href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon arrow-up"><path d="M34.9 289.5l-22.2-22.2c-9.4-9.4-9.4-24.6 0-33.9L207 39c9.4-9.4 24.6-9.4 33.9 0l194.3 194.3c9.4 9.4 9.4 24.6 0 33.9L413 289.4c-9.5 9.5-25 9.3-34.3-.4L264 168.6V456c0 13.3-10.7 24-24 24h-32c-13.3 0-24-10.7-24-24V168.6L69.2 289.1c-9.3 9.8-24.8 10-34.3.4z"/></svg></a>
+    </div>
+
+
+            
+    <footer id="footer" class="footer">
+        <div class="footer-inner">
+            <div class="site-info">©&nbsp;2017–2021&nbsp;&nbsp;haohongfan</div><div class="powered-by">Powered by <a href="https://github.com/gohugoio/hugo" target="_blank" rel="noopener">Hugo</a> | Theme is <a href="https://github.com/reuixiy/hugo-theme-meme" target="_blank" rel="noopener">MemE</a></div><div class="site-copyright"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></div><div class="custom-footer"><a href="http://www.beian.miit.gov.cn" target="_blank" rel="noopener">京ICP备17041575号</a> | <a href="/friend/">友情链接</a></div>
+
+            
+
+
+            
+        </div>
+    </footer>
+
+
+        </div>
+        
+
+        
+
+
+
+
+
+
+    
+
+        
+
+        
+
+        
+            <script>
+    function loadComments() {
+        (function() {
+            var utterances = document.getElementById("utterances");
+            var script = document.createElement('script');
+            script.src = 'https://utteranc.es/client.js';
+            script.async = true;
+            script.crossOrigin = 'anonymous';
+            script.setAttribute('repo', 'georgehao\/blog');
+            script.setAttribute('issue-term', 'pathname');
+            const isDark = getCurrentTheme() === 'dark';
+        if (isDark) {
+            script.setAttribute('theme', 'photon-dark');
+        } else {
+            script.setAttribute('theme', 'github-light');
+        }
+            
+            utterances.appendChild(script);
+        })();
+    }
+</script>
+        
+
+    
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@latest/dist/medium-zoom.min.js"></script>
+
+<script>
+    mediumZoom(document.querySelectorAll('div.post-body img'), {
+        background: 'hsla(var(--color-bg-h), var(--color-bg-s), var(--color-bg-l), 0.95)'
+    })
+</script>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/instant.page@5.1.0/instantpage.min.js" type="module" defer></script>
+
+
+
+
+    
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+
+
+    </body>
+</html>

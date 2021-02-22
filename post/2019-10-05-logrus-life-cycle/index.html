@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article#">
+    <meta charset="UTF-8" />
+
+    <meta name="generator" content="Hugo 0.74.3" /><meta name="theme-color" content="#16171d" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+    
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+
+    <title>Logrus源码阅读(2)--logrus生命周期 | HHF 技术博客</title>
+
+    <link rel="stylesheet" href="/css/meme.min.0dbbf9afa89ac8dd82a75ac6e566dbff2c2c893bb4155d92e86a72c1b221c237.css"/>
+
+    
+    
+        <script src="/js/meme.min.dc5f06e091343e25ce96aab325d0ae445a2a6c77e33658dfb443924ce61b7608.js"></script>
+
+    
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB&#43;Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Noto&#43;Serif&#43;SC:wght@400;500;700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap" media="print" onload="this.media='all'" />
+        <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB&#43;Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Noto&#43;Serif&#43;SC:wght@400;500;700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap" /></noscript>
+
+    <meta name="author" content="haohongfan" /><meta name="description" content="……" />
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#2a6df4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="HHF 技术博客" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="HHF 技术博客" />
+    <meta name="msapplication-starturl" content="../../" />
+    <meta name="msapplication-TileColor" content="#fff" />
+    <meta name="msapplication-TileImage" content="../../icons/mstile-150x150.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    
+    
+
+    
+    <link rel="canonical" href="https://www.haohongfan.com/post/2019-10-05-logrus-life-cycle/" />
+    
+
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "datePublished": "2019-10-05T11:21:24+08:00",
+        "dateModified": "2019-10-05T11:21:24+08:00",
+        "url": "https://www.haohongfan.com/post/2019-10-05-logrus-life-cycle/",
+        "headline": "Logrus源码阅读(2)--logrus生命周期",
+        "description": "……",
+        "inLanguage" : "zh-CN",
+        "articleSection": "post",
+        "wordCount":  6434 ,
+        "image": ["https://images.haohongfan.com/logrus-liucheng2.png"],
+        "author": {
+            "@type": "Person",
+            "description": "Viva La Vida",
+            "email": "haohongfan2010@126.com",
+            "image": "https://www.haohongfan.com/icons/apple-touch-icon.png",
+            "url": "https://www.haohongfan.com/",
+            "name": "haohongfan"
+        },
+        "license": "[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)",
+        "publisher": {
+            "@type": "Organization",
+            "name": "HHF 技术博客",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://www.haohongfan.com/icons/apple-touch-icon.png"
+            },
+            "url": "https://www.haohongfan.com/"
+        },
+        "mainEntityOfPage": {
+            "@type": "WebSite",
+            "@id": "https://www.haohongfan.com/"
+        }
+    }
+</script>
+
+    
+
+<meta name="twitter:card" content="summary_large_image" />
+
+
+
+    
+
+
+
+<meta property="og:title" content="Logrus源码阅读(2)--logrus生命周期" />
+<meta property="og:description" content="……" />
+<meta property="og:url" content="https://www.haohongfan.com/post/2019-10-05-logrus-life-cycle/" />
+<meta property="og:site_name" content="HHF 技术博客" />
+<meta property="og:locale" content="zh" /><meta property="og:image" content="https://images.haohongfan.com/logrus-liucheng2.png" />
+<meta property="og:type" content="article" />
+    <meta property="article:published_time" content="2019-10-05T11:21:24&#43;08:00" />
+    <meta property="article:modified_time" content="2019-10-05T11:21:24&#43;08:00" />
+    
+    <meta property="article:section" content="post" />
+
+
+
+    
+</head>
+
+    <body>
+        <div class="container">
+            
+    <header class="header">
+        
+            <div class="header-wrapper">
+                <div class="header-inner single">
+                    
+    <div class="site-brand">
+        
+            <a href="/" class="brand">HHF 技术博客</a>
+        
+    </div>
+
+                    <nav class="nav">
+    <ul class="menu" id="menu">
+        
+            
+        
+        
+        
+        
+            
+                <li class="menu-item"><a href="/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="icon home"><path d="M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z"/></svg><span class="menu-item-name">首页</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/post/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon archive"><path d="M32 448c0 17.7 14.3 32 32 32h384c17.7 0 32-14.3 32-32V160H32v288zm160-212c0-6.6 5.4-12 12-12h104c6.6 0 12 5.4 12 12v8c0 6.6-5.4 12-12 12H204c-6.6 0-12-5.4-12-12v-8zM480 32H32C14.3 32 0 46.3 0 64v48c0 8.8 7.2 16 16 16h480c8.8 0 16-7.2 16-16V64c0-17.7-14.3-32-32-32z"/></svg><span class="menu-item-name">归档</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/categories/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon th"><path d="M149.333 56v80c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24h101.333c13.255 0 24 10.745 24 24zm181.334 240v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm32-240v80c0 13.255 10.745 24 24 24H488c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24zm-32 80V56c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm-205.334 56H24c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24zM0 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm386.667-56H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zm0 160H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zM181.333 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24z"/></svg><span class="menu-item-name">分类</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/tags/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="icon tags"><path d="M497.941 225.941L286.059 14.059A48 48 0 0 0 252.118 0H48C21.49 0 0 21.49 0 48v204.118a48 48 0 0 0 14.059 33.941l211.882 211.882c18.744 18.745 49.136 18.746 67.882 0l204.118-204.118c18.745-18.745 18.745-49.137 0-67.882zM112 160c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm513.941 133.823L421.823 497.941c-18.745 18.745-49.137 18.745-67.882 0l-.36-.36L527.64 323.522c16.999-16.999 26.36-39.6 26.36-63.64s-9.362-46.641-26.36-63.64L331.397 0h48.721a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882z"/></svg><span class="menu-item-name">标签</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/abouts/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon user-circle"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 96c48.6 0 88 39.4 88 88s-39.4 88-88 88-88-39.4-88-88 39.4-88 88-88zm0 344c-58.7 0-111.3-26.6-146.5-68.2 18.8-35.4 55.6-59.8 98.5-59.8 2.4 0 4.8.4 7.1 1.1 13 4.2 26.6 6.9 40.9 6.9 14.3 0 28-2.7 40.9-6.9 2.3-.7 4.7-1.1 7.1-1.1 42.9 0 79.7 24.4 98.5 59.8C359.3 421.4 306.7 448 248 448z"/></svg><span class="menu-item-name">关于</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/learns/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon grav"><path d="M301.1 212c4.4 4.4 4.4 11.9 0 16.3l-9.7 9.7c-4.4 4.7-11.9 4.7-16.6 0l-10.5-10.5c-4.4-4.7-4.4-11.9 0-16.6l9.7-9.7c4.4-4.4 11.9-4.4 16.6 0l10.5 10.8zm-30.2-19.7c3-3 3-7.8 0-10.5-2.8-3-7.5-3-10.5 0-2.8 2.8-2.8 7.5 0 10.5 3.1 2.8 7.8 2.8 10.5 0zm-26 5.3c-3 2.8-3 7.5 0 10.2 2.8 3 7.5 3 10.5 0 2.8-2.8 2.8-7.5 0-10.2-3-3-7.7-3-10.5 0zm72.5-13.3c-19.9-14.4-33.8-43.2-11.9-68.1 21.6-24.9 40.7-17.2 59.8.8 11.9 11.3 29.3 24.9 17.2 48.2-12.5 23.5-45.1 33.2-65.1 19.1zm47.7-44.5c-8.9-10-23.3 6.9-15.5 16.1 7.4 9 32.1 2.4 15.5-16.1zM504 256c0 137-111 248-248 248S8 393 8 256 119 8 256 8s248 111 248 248zm-66.2 42.6c2.5-16.1-20.2-16.6-25.2-25.7-13.6-24.1-27.7-36.8-54.5-30.4 11.6-8 23.5-6.1 23.5-6.1.3-6.4 0-13-9.4-24.9 3.9-12.5.3-22.4.3-22.4 15.5-8.6 26.8-24.4 29.1-43.2 3.6-31-18.8-59.2-49.8-62.8-22.1-2.5-43.7 7.7-54.3 25.7-23.2 40.1 1.4 70.9 22.4 81.4-14.4-1.4-34.3-11.9-40.1-34.3-6.6-25.7 2.8-49.8 8.9-61.4 0 0-4.4-5.8-8-8.9 0 0-13.8 0-24.6 5.3 11.9-15.2 25.2-14.4 25.2-14.4 0-6.4-.6-14.9-3.6-21.6-5.4-11-23.8-12.9-31.7 2.8.1-.2.3-.4.4-.5-5 11.9-1.1 55.9 16.9 87.2-2.5 1.4-9.1 6.1-13 10-21.6 9.7-56.2 60.3-56.2 60.3-28.2 10.8-77.2 50.9-70.6 79.7.3 3 1.4 5.5 3 7.5-2.8 2.2-5.5 5-8.3 8.3-11.9 13.8-5.3 35.2 17.7 24.4 15.8-7.2 29.6-20.2 36.3-30.4 0 0-5.5-5-16.3-4.4 27.7-6.6 34.3-9.4 46.2-9.1 8 3.9 8-34.3 8-34.3 0-14.7-2.2-31-11.1-41.5 12.5 12.2 29.1 32.7 28 60.6-.8 18.3-15.2 23-15.2 23-9.1 16.6-43.2 65.9-30.4 106 0 0-9.7-14.9-10.2-22.1-17.4 19.4-46.5 52.3-24.6 64.5 26.6 14.7 108.8-88.6 126.2-142.3 34.6-20.8 55.4-47.3 63.9-65 22 43.5 95.3 94.5 101.1 59z"/></svg><span class="menu-item-name">笔记</span></a>
+                </li>
+            
+        
+            
+                
+                    
+                    
+                        <li class="menu-item">
+                            <a id="theme-switcher" href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-light"><path d="M193.2 104.5l48.8-97.5a18 18 0 0128 0l48.8 97.5 103.4 -34.5a18 18 0 0119.8 19.8l-34.5 103.4l97.5 48.8a18 18 0 010 28l-97.5 48.8 34.5 103.4a18 18 0 01-19.8 19.8l-103.4-34.5-48.8 97.5a18 18 0 01-28 0l-48.8-97.5l-103.4 34.5a18 18 0 01-19.8-19.8l34.5-103.4-97.5-48.8a18 18 0 010-28l97.5-48.8-34.5-103.4a18 18 0 0119.8-19.8zM256 128a128 128 0 10.01 0M256 160a96 96 0 10.01 0"/></svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-dark"><path d="M27 412a256 256 0 10154-407a11.5 11.5 0 00-5 20a201.5 201.5 0 01-134 374a11.5 11.5 0 00-15 13"/></svg></a>
+                        </li>
+                    
+                
+            
+        
+            
+                
+            
+        
+    </ul>
+</nav>
+
+                    
+                </div>
+            </div>
+            
+    <input type="checkbox" id="nav-toggle" aria-hidden="true" />
+    <label for="nav-toggle" class="nav-toggle"></label>
+    <label for="nav-toggle" class="nav-curtain"></label>
+
+
+        
+    </header>
+
+
+
+
+            
+            
+    <main class="main single" id="main">
+    <div class="main-inner">
+
+        
+
+        <article class="content post h-entry" data-align="justify" data-type="post" data-toc-num="true">
+
+            <h1 class="post-title p-name">Logrus源码阅读(2)--logrus生命周期</h1>
+
+            
+
+            
+                
+            
+
+            
+                
+
+<div class="post-meta">
+    
+        
+        <time datetime="2019-10-05T11:21:24&#43;08:00" class="post-meta-item published dt-published"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M148 288h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm108-12v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 96v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96-260v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h48V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h128V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h48c26.5 0 48 21.5 48 48zm-48 346V160H48v298c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>&nbsp;2019.10.5</time>
+    
+    
+        
+        <time datetime="2019-10-05T11:21:24&#43;08:00" class="post-meta-item modified dt-updated"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M400 64h-48V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H160V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H48C21.49 64 0 85.49 0 112v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm-6 400H54a6 6 0 0 1-6-6V160h352v298a6 6 0 0 1-6 6zm-52.849-200.65L198.842 404.519c-4.705 4.667-12.303 4.637-16.971-.068l-75.091-75.699c-4.667-4.705-4.637-12.303.068-16.971l22.719-22.536c4.705-4.667 12.303-4.637 16.97.069l44.104 44.461 111.072-110.181c4.705-4.667 12.303-4.637 16.971.068l22.536 22.718c4.667 4.705 4.636 12.303-.069 16.97z"/></svg>&nbsp;2019.10.5</time>
+    
+    
+    
+        
+        
+            
+            
+                
+                
+                
+                
+                    
+                    
+                    
+                        
+                            
+                            
+                        
+                    
+                
+            
+            
+            
+                <span class="post-meta-item category"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M464 128H272l-54.63-54.63c-6-6-14.14-9.37-22.63-9.37H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V176c0-26.51-21.49-48-48-48zm0 272H48V112h140.12l54.63 54.63c6 6 14.14 9.37 22.63 9.37H464v224z"/></svg>&nbsp;<a href="/post/" class="category-link p-category">Post</a></span>
+            
+        
+        
+    
+    
+        
+        <span class="post-meta-item wordcount"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"/></svg>&nbsp;6434</span>
+    
+    
+    
+        
+            
+            <span class="post-meta-item busuanzi-page-pv" id="busuanzi_container_page_pv"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="icon post-meta-icon"><path d="M288 144a110.94 110.94 0 0 0-31.24 5 55.4 55.4 0 0 1 7.24 27 56 56 0 0 1-56 56 55.4 55.4 0 0 1-27-7.24A111.71 111.71 0 1 0 288 144zm284.52 97.4C518.29 135.59 410.93 64 288 64S57.68 135.64 3.48 241.41a32.35 32.35 0 0 0 0 29.19C57.71 376.41 165.07 448 288 448s230.32-71.64 284.52-177.41a32.35 32.35 0 0 0 0-29.19zM288 400c-98.65 0-189.09-55-237.93-144C98.91 167 189.34 112 288 112s189.09 55 237.93 144C477.1 345 386.66 400 288 400z"/></svg>&nbsp;<span id="busuanzi_value_page_pv"></span></span>
+        
+    
+    
+</div>
+
+            
+
+            <div class="post-body e-content">
+              <p><a href="https://www.haohongfan.com/post/2019-06-11-logurs-1/" target="_blank" rel="noopener">上一篇</a>介绍logrus的基本用法, 本篇文章介绍logrus的整个生命周期</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-golang" data-lang="golang"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">Info</span><span class="p">(</span><span class="s">&#34;hello logrus&#34;</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>从上面这个简单的例子, 追踪logrus的整个生命周期</p>
+<h2 id="初始化"><a href="#初始化" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>初始化</h2>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-golang" data-lang="golang"><span class="c1">// exported.go:L108
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">Info</span><span class="p">(</span><span class="nx">args</span> <span class="o">...</span><span class="kd">interface</span><span class="p">{})</span> <span class="p">{</span>
+	<span class="nx">std</span><span class="p">.</span><span class="nf">Info</span><span class="p">(</span><span class="nx">args</span><span class="o">...</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>Info函数的参数是一个可变参数, 接收任意类型的参数</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-golang" data-lang="golang"><span class="c1">// exported.go:L11
+</span><span class="c1"></span><span class="kd">var</span> <span class="p">(</span>
+	<span class="c1">// std is the name of the standard logger in stdlib `log`
+</span><span class="c1"></span>	<span class="nx">std</span> <span class="p">=</span> <span class="nf">New</span><span class="p">()</span>
+<span class="p">)</span>
+
+<span class="kd">func</span> <span class="nf">StandardLogger</span><span class="p">()</span> <span class="o">*</span><span class="nx">Logger</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="nx">std</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>std是一个全局变量, 是一个<code>logrus.Logger</code>类型. 由于std是包外面无法访问的, 所以还提供StandardLogger()函数获取到std</p>
+<p>logrus就是初始化一个全局变量<code>std</code>, 所有的使用方式都是围绕着这个std来的</p>
+<p>上一篇关于logrus的三种使用方式: <code>logrus.Info</code>, <code>logrus.WithField</code>, <code>Entry(ctx *gin.Context) *logrus.Entry</code>本质就是调用全局变量std</p>
+<p><strong>这里留个思考题, 您是否知道golang的初始化流程呢? std全局变量是什么时候被初始化完成的?</strong></p>
+<p>这里还要引申出另外一个问题: 由于我们维护一个全局变量, 但是我们程序是多goroutine的, 当程序多个地方打印日志或者写入文件时, 如何保证日志顺序的正确性, 也就是并发是如何实现的?</p>
+<h3 id="new"><a href="#new" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>New</h3>
+<p>从<code>初始化</code>那里可以看到std是由<code>New</code>函数创建出来的</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">New</span><span class="p">()</span> <span class="o">*</span><span class="nx">Logger</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">Logger</span><span class="p">{</span>
+		<span class="nx">Out</span><span class="p">:</span>          <span class="nx">os</span><span class="p">.</span><span class="nx">Stderr</span><span class="p">,</span>
+		<span class="nx">Formatter</span><span class="p">:</span>    <span class="nb">new</span><span class="p">(</span><span class="nx">TextFormatter</span><span class="p">),</span>
+		<span class="nx">Hooks</span><span class="p">:</span>        <span class="nb">make</span><span class="p">(</span><span class="nx">LevelHooks</span><span class="p">),</span>
+		<span class="nx">Level</span><span class="p">:</span>        <span class="nx">InfoLevel</span><span class="p">,</span>
+		<span class="nx">ExitFunc</span><span class="p">:</span>     <span class="nx">os</span><span class="p">.</span><span class="nx">Exit</span><span class="p">,</span>
+		<span class="nx">ReportCaller</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>logrus由<code>Out</code>, <code>Formatter</code>, <code>Hooks</code>, <code>Level</code>, <code>ExitFunc</code>, <code>ReportCaller</code>组成. 关于组件的详细作用, 下面再具体介绍剖析</p>
+<p>其实还有两个重要的字段</p>
+<ul>
+<li>MutexWrap: 用来解决并发. // Used to sync writing to the log. Locking is enabled by Default</li>
+<li>entryPool: 用来解决Entry gc压力. // Reusable empty entry</li>
+</ul>
+<h2 id="调用流程"><a href="#调用流程" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>调用流程</h2>
+<p>回到<code>log.Info(&quot;hello logrus&quot;)</code>这个最简单的使用的例子, 追踪下具体的调用过程</p>
+<p><img src="https://images.haohongfan.com/logrus-liucheng2.png" alt=""></p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// exported.go:L107
+</span><span class="c1">// Info logs a message at level Info on the standard logger.
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">Info</span><span class="p">(</span><span class="nx">args</span> <span class="o">...</span><span class="kd">interface</span><span class="p">{})</span> <span class="p">{</span>
+	<span class="nx">std</span><span class="p">.</span><span class="nf">Info</span><span class="p">(</span><span class="nx">args</span><span class="o">...</span><span class="p">)</span> <span class="c1">// &lt;-- 看这里
+</span><span class="c1"></span><span class="p">}</span>
+
+<span class="c1">// logger.go:L205
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">logger</span> <span class="o">*</span><span class="nx">Logger</span><span class="p">)</span> <span class="nf">Info</span><span class="p">(</span><span class="nx">args</span> <span class="o">...</span><span class="kd">interface</span><span class="p">{})</span> <span class="p">{</span>
+	<span class="nx">logger</span><span class="p">.</span><span class="nf">Log</span><span class="p">(</span><span class="nx">InfoLevel</span><span class="p">,</span> <span class="nx">args</span><span class="o">...</span><span class="p">)</span> <span class="c1">// &lt;-- 看这里
+</span><span class="c1"></span><span class="p">}</span>
+
+<span class="c1">// logger.go:L189
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">logger</span> <span class="o">*</span><span class="nx">Logger</span><span class="p">)</span> <span class="nf">Log</span><span class="p">(</span><span class="nx">level</span> <span class="nx">Level</span><span class="p">,</span> <span class="nx">args</span> <span class="o">...</span><span class="kd">interface</span><span class="p">{})</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">logger</span><span class="p">.</span><span class="nf">IsLevelEnabled</span><span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+		<span class="nx">entry</span> <span class="o">:=</span> <span class="nx">logger</span><span class="p">.</span><span class="nf">newEntry</span><span class="p">()</span>
+		<span class="nx">entry</span><span class="p">.</span><span class="nf">Log</span><span class="p">(</span><span class="nx">level</span><span class="p">,</span> <span class="nx">args</span><span class="o">...</span><span class="p">)</span> <span class="c1">// &lt;-- 看这里
+</span><span class="c1"></span>		<span class="nx">logger</span><span class="p">.</span><span class="nf">releaseEntry</span><span class="p">(</span><span class="nx">entry</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// entry.go:L266
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">entry</span> <span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="nf">Log</span><span class="p">(</span><span class="nx">level</span> <span class="nx">Level</span><span class="p">,</span> <span class="nx">args</span> <span class="o">...</span><span class="kd">interface</span><span class="p">{})</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nf">IsLevelEnabled</span><span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+		<span class="nx">entry</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="nx">level</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprint</span><span class="p">(</span><span class="nx">args</span><span class="o">...</span><span class="p">))</span> <span class="c1">// &lt;-- 看这里
+</span><span class="c1"></span>	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// entry.go:L206
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">entry</span> <span class="nx">Entry</span><span class="p">)</span> <span class="nf">log</span><span class="p">(</span><span class="nx">level</span> <span class="nx">Level</span><span class="p">,</span> <span class="nx">msg</span> <span class="kt">string</span><span class="p">)</span> <span class="p">{</span>
+	<span class="o">...</span>
+
+	<span class="nx">buffer</span> <span class="p">=</span> <span class="nx">bufferPool</span><span class="p">.</span><span class="nf">Get</span><span class="p">().(</span><span class="o">*</span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span><span class="p">)</span>
+	<span class="nx">buffer</span><span class="p">.</span><span class="nf">Reset</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">bufferPool</span><span class="p">.</span><span class="nf">Put</span><span class="p">(</span><span class="nx">buffer</span><span class="p">)</span>
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Buffer</span> <span class="p">=</span> <span class="nx">buffer</span>
+
+	<span class="nx">entry</span><span class="p">.</span><span class="nf">write</span><span class="p">()</span> <span class="c1">// &lt;-- 看这里
+</span><span class="c1"></span>
+	<span class="o">...</span><span class="p">.</span>
+<span class="p">}</span>
+
+<span class="c1">// entry.go:L252
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">entry</span> <span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="nf">write</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="nx">serialized</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">Formatter</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="nx">entry</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintf</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">Stderr</span><span class="p">,</span> <span class="s">&#34;Failed to obtain reader, %v\n&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+		<span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">Out</span><span class="p">.</span><span class="nf">Write</span><span class="p">(</span><span class="nx">serialized</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+			<span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintf</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">Stderr</span><span class="p">,</span> <span class="s">&#34;Failed to write to log, %v\n&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>虽说初始化的时候, New出来的是<code>Logger</code>类型, 但logrus真正执行者却是<code>Entry</code>. <code>Logger</code>有两个比较重要的函数<code>newEntry</code>, <code>releaseEntry</code>, logrus所有的log函数, 比如: <code>Info</code>, <code>Error</code>.... 最终都会调用这两个函数</p>
+<h3 id="newentry--releaseentry"><a href="#newentry--releaseentry" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>newEntry &amp;&amp; releaseEntry</h3>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// logger.go:L90-101
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">logger</span> <span class="o">*</span><span class="nx">Logger</span><span class="p">)</span> <span class="nf">newEntry</span><span class="p">()</span> <span class="o">*</span><span class="nx">Entry</span> <span class="p">{</span>
+	<span class="nx">entry</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">logger</span><span class="p">.</span><span class="nx">entryPool</span><span class="p">.</span><span class="nf">Get</span><span class="p">().(</span><span class="o">*</span><span class="nx">Entry</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">ok</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">entry</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nf">NewEntry</span><span class="p">(</span><span class="nx">logger</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">logger</span> <span class="o">*</span><span class="nx">Logger</span><span class="p">)</span> <span class="nf">releaseEntry</span><span class="p">(</span><span class="nx">entry</span> <span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Data</span> <span class="p">=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}{}</span>
+	<span class="nx">logger</span><span class="p">.</span><span class="nx">entryPool</span><span class="p">.</span><span class="nf">Put</span><span class="p">(</span><span class="nx">entry</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>Logger使用到了<code>sync.Pool</code>, 用来解决频繁创建/释放Entry对象造成的gc的压力. 具体位置就是<code>logger.go:L189</code></p>
+<p>当我们使用logrus log相关函数时, 必定会调用到<code>logger.Log()</code>函数, 该函数会调用<code>newEntry()</code>来申请Pool内存, 调用完成后会再调用<code>releaseEntry()</code>返还给Pool</p>
+<p>注意点:</p>
+<ol>
+<li>初始化Logger时, <code>New</code>函数没有初始化entryPool, 所以entryPool默认返回的是nil</li>
+<li>entry, ok := logger.entryPool.Get().(*Entry), 这段代码是先从Pool获取内存, 然后判断获取到的值是否是<code>*Entry</code>类型</li>
+<li>在第一次调用时由于获取到的值肯定是nil, 故调用了<code>NewEntry</code>函数获取了一块内存</li>
+<li>不过在调用releaseEntry函数时将这块内存Put到entryPool里, 后面所有调用都是从Pool里面获取</li>
+</ol>
+<p>newEntry, releaseEntry这是<code>Sync.Pool</code>的另外一种用法, 可以看这里一个具体的简单的<a href="https://play.golang.org/p/74gWnH37-zr" target="_blank" rel="noopener">例子</a></p>
+<h2 id="entry"><a href="#entry" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>Entry</h2>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Entry</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Logger</span> <span class="o">*</span><span class="nx">Logger</span> <span class="c1">// 其实就是std指针, 后面再说具体的作用
+</span><span class="c1"></span>	<span class="nx">Data</span> <span class="nx">Fields</span>    <span class="c1">// 就是各种WithXXX所带的参数
+</span><span class="c1"></span>	<span class="nx">Time</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Time</span> <span class="c1">// 提供给logrus.WithTime, logrus.WithContext使用
+</span><span class="c1"></span>	<span class="nx">Level</span> <span class="nx">Level</span>    <span class="c1">// 日志级别
+</span><span class="c1"></span>	<span class="nx">Caller</span> <span class="o">*</span><span class="nx">runtime</span><span class="p">.</span><span class="nx">Frame</span>  <span class="c1">// 当设置SetReportCaller时使用, 具体后面再说
+</span><span class="c1"></span>	<span class="nx">Message</span> <span class="kt">string</span> <span class="c1">// 真正打印的日志内容
+</span><span class="c1"></span>	<span class="nx">Buffer</span> <span class="o">*</span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span> <span class="c1">// 提供给各种Formatter使用, 其实就是真正要打印的日志的内存地址
+</span><span class="c1"></span>	<span class="nx">Context</span> <span class="nx">context</span><span class="p">.</span><span class="nx">Context</span> <span class="c1">// 提供给logrus.WithTime, logrus.WithContext使用
+</span><span class="c1"></span>	<span class="nx">err</span> <span class="kt">string</span> <span class="c1">// 提供一个能够包含错误信息的字段
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// entry.go:L80-86
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">NewEntry</span><span class="p">(</span><span class="nx">logger</span> <span class="o">*</span><span class="nx">Logger</span><span class="p">)</span> <span class="o">*</span><span class="nx">Entry</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">Entry</span><span class="p">{</span>
+		<span class="nx">Logger</span><span class="p">:</span> <span class="nx">logger</span><span class="p">,</span>
+		<span class="c1">// Default is three fields, plus one optional.  Give a little extra room.
+</span><span class="c1"></span>		<span class="nx">Data</span><span class="p">:</span> <span class="nb">make</span><span class="p">(</span><span class="nx">Fields</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>注意到到Data其实就是<code>map[string]interface{}</code>, 其预先分配了6个空间(预先给make函数⼀一个合理元素数量参数，有助于提升性能。因为事先申请⼀一⼤大块内存， 可避免后续操作时频繁扩张 -- Go 学习笔记 第四版. 引申: map是否能用cap函数计算其容量? 为什么?)</p>
+<h3 id="withxxx"><a href="#withxxx" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>WithXXX</h3>
+<p>几个比较重要的With函数</p>
+<ul>
+<li>WithContext</li>
+<li>WithField</li>
+<li>WithFields</li>
+<li>WithTime</li>
+<li>WithError</li>
+</ul>
+<p>考虑到篇幅过长, 这个几个函数具体实现, 下篇介绍logurs高级用法再说</p>
+<h3 id="log"><a href="#log" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>log</h3>
+<p>不管程序是否调用WithXXX函数, 最终都会调用Entry.log函数. 这是logrus最重要的函数, Hook机制也就是在这里实现的</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">entry</span> <span class="nx">Entry</span><span class="p">)</span> <span class="nf">log</span><span class="p">(</span><span class="nx">level</span> <span class="nx">Level</span><span class="p">,</span> <span class="nx">msg</span> <span class="kt">string</span><span class="p">)</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">buffer</span> <span class="o">*</span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span>
+
+	<span class="c1">// 判断时间是否为空, 如果是空的话, 就设置entry.Time为当前时间
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Time</span><span class="p">.</span><span class="nf">IsZero</span><span class="p">()</span> <span class="p">{</span>
+		<span class="nx">entry</span><span class="p">.</span><span class="nx">Time</span> <span class="p">=</span> <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">()</span>
+	<span class="p">}</span>
+
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Level</span> <span class="p">=</span> <span class="nx">level</span>
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Message</span> <span class="p">=</span> <span class="nx">msg</span>
+	<span class="c1">// 设置调用者
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">ReportCaller</span> <span class="p">{</span>
+		<span class="nx">entry</span><span class="p">.</span><span class="nx">Caller</span> <span class="p">=</span> <span class="nf">getCaller</span><span class="p">()</span>
+	<span class="p">}</span>
+
+	<span class="c1">// 调用Hook
+</span><span class="c1"></span>	<span class="nx">entry</span><span class="p">.</span><span class="nf">fireHooks</span><span class="p">()</span>
+
+	<span class="nx">buffer</span> <span class="p">=</span> <span class="nx">bufferPool</span><span class="p">.</span><span class="nf">Get</span><span class="p">().(</span><span class="o">*</span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span><span class="p">)</span>
+	<span class="nx">buffer</span><span class="p">.</span><span class="nf">Reset</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">bufferPool</span><span class="p">.</span><span class="nf">Put</span><span class="p">(</span><span class="nx">buffer</span><span class="p">)</span>
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Buffer</span> <span class="p">=</span> <span class="nx">buffer</span>
+
+	<span class="nx">entry</span><span class="p">.</span><span class="nf">write</span><span class="p">()</span>
+
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Buffer</span> <span class="p">=</span> <span class="kc">nil</span>
+
+	<span class="c1">// 当日志级别是PanicLevel时, 让程序直接panic
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">level</span> <span class="o">&lt;=</span> <span class="nx">PanicLevel</span> <span class="p">{</span>
+		<span class="nb">panic</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">entry</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><h2 id="hook"><a href="#hook" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>Hook</h2>
+<p>logrus提供了一个很方便的插件功能就是Hook, 其实现原理很简单. 流程调用的地方就是<code>entry.fireHooks()</code></p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">entry</span> <span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="nf">fireHooks</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="nx">err</span> <span class="o">:=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">Hooks</span><span class="p">.</span><span class="nf">Fire</span><span class="p">(</span><span class="nx">entry</span><span class="p">.</span><span class="nx">Level</span><span class="p">,</span> <span class="nx">entry</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintf</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">Stderr</span><span class="p">,</span> <span class="s">&#34;Failed to fire hook: %v\n&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>我们可以根据自己的需求自定义Hook, 但需要实现Hook的interface</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Hook</span> <span class="kd">interface</span> <span class="p">{</span>
+	<span class="nf">Levels</span><span class="p">()</span> <span class="p">[]</span><span class="nx">Level</span> <span class="c1">// 用来确定哪些级别的日志, 去调用Hook
+</span><span class="c1"></span>	<span class="nf">Fire</span><span class="p">(</span><span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="kt">error</span> <span class="c1">// 真正执行自定义Hook
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p><strong>Hook的使用方法</strong></p>
+<ol>
+<li>实现Levels, Fire函数</li>
+<li>调用全局AddHook, 将Hook注册, ok</li>
+</ol>
+<p>以<code>github.com/rifflock/lfshook</code>举例</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kn">package</span> <span class="nx">main</span>
+
+<span class="kn">import</span> <span class="p">(</span>
+	<span class="nx">rotatelogs</span> <span class="s">&#34;github.com/lestrrat-go/file-rotatelogs&#34;</span>
+	<span class="s">&#34;github.com/rifflock/lfshook&#34;</span>
+<span class="p">)</span>
+
+<span class="kd">func</span> <span class="nf">newLfsHook</span><span class="p">(</span><span class="nx">fileName</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">maxRemainCnt</span> <span class="kt">uint</span><span class="p">)</span> <span class="nx">log</span><span class="p">.</span><span class="nx">Hook</span> <span class="p">{</span>
+	<span class="nx">writer</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">rotatelogs</span><span class="p">.</span><span class="nf">New</span><span class="p">(</span>
+		<span class="nx">fileName</span><span class="o">+</span><span class="s">&#34;.%Y%m%d%H%M&#34;</span><span class="p">,</span>
+		<span class="nx">rotatelogs</span><span class="p">.</span><span class="nf">WithLinkName</span><span class="p">(</span><span class="s">&#34;ling_nest_log&#34;</span><span class="p">),</span>
+		<span class="nx">rotatelogs</span><span class="p">.</span><span class="nf">WithRotationTime</span><span class="p">(</span><span class="nx">time</span><span class="p">.</span><span class="nx">Hour</span><span class="o">*</span><span class="nx">time</span><span class="p">.</span><span class="nf">Duration</span><span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">Config</span><span class="p">.</span><span class="nf">GetInt</span><span class="p">(</span><span class="s">&#34;log.time&#34;</span><span class="p">))),</span>
+		<span class="nx">rotatelogs</span><span class="p">.</span><span class="nf">WithRotationCount</span><span class="p">(</span><span class="nx">maxRemainCnt</span><span class="p">),</span>
+	<span class="p">)</span>
+
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;config local file system for logger error: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+
+	<span class="nx">lfsHook</span> <span class="o">:=</span> <span class="nx">lfshook</span><span class="p">.</span><span class="nf">NewHook</span><span class="p">(</span><span class="nx">lfshook</span><span class="p">.</span><span class="nx">WriterMap</span><span class="p">{</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nx">DebugLevel</span><span class="p">:</span> <span class="nx">writer</span><span class="p">,</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nx">InfoLevel</span><span class="p">:</span>  <span class="nx">writer</span><span class="p">,</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nx">WarnLevel</span><span class="p">:</span>  <span class="nx">writer</span><span class="p">,</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nx">ErrorLevel</span><span class="p">:</span> <span class="nx">writer</span><span class="p">,</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nx">FatalLevel</span><span class="p">:</span> <span class="nx">writer</span><span class="p">,</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nx">PanicLevel</span><span class="p">:</span> <span class="nx">writer</span><span class="p">,</span>
+	<span class="p">},</span> <span class="o">&amp;</span><span class="nx">log</span><span class="p">.</span><span class="nx">JSONFormatter</span><span class="p">{})</span>
+
+	<span class="k">return</span> <span class="nx">lfsHook</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">fileName</span> <span class="o">:=</span> <span class="s">&#34;log.txt&#34;</span>
+	<span class="nx">logrus</span><span class="p">.</span><span class="nf">AddHook</span><span class="p">(</span><span class="nf">newLfsHook</span><span class="p">(</span><span class="nx">fileName</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+	<span class="nx">logrus</span><span class="p">.</span><span class="nf">Info</span><span class="p">(</span><span class="s">&#34;xxxx&#34;</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>值得注意的是: <strong>由于logrus本身并不提供写文件, 并且按照日期自动分割, 删除过期日志文件的功能. 一般情况下大家都是使用<code>github.com/rifflock/lfshook</code>配合<code>github.com/lestrrat-go/file-rotatelogs</code>来实现相关的功能</strong></p>
+<p>原理:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Logger</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="o">...</span>
+
+	<span class="nx">Hooks</span> <span class="nx">LevelHooks</span>
+
+	<span class="o">...</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">LevelHooks</span> <span class="kd">map</span><span class="p">[</span><span class="nx">Level</span><span class="p">][]</span><span class="nx">Hook</span>
+<span class="kd">func</span> <span class="p">(</span><span class="nx">hooks</span> <span class="nx">LevelHooks</span><span class="p">)</span> <span class="nf">Add</span><span class="p">(</span><span class="nx">hook</span> <span class="nx">Hook</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">level</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">hook</span><span class="p">.</span><span class="nf">Levels</span><span class="p">()</span> <span class="p">{</span>
+		<span class="nx">hooks</span><span class="p">[</span><span class="nx">level</span><span class="p">]</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">hooks</span><span class="p">[</span><span class="nx">level</span><span class="p">],</span> <span class="nx">hook</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">hooks</span> <span class="nx">LevelHooks</span><span class="p">)</span> <span class="nf">Fire</span><span class="p">(</span><span class="nx">level</span> <span class="nx">Level</span><span class="p">,</span> <span class="nx">entry</span> <span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="kt">error</span> <span class="p">{</span>
+	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">hook</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">hooks</span><span class="p">[</span><span class="nx">level</span><span class="p">]</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">hook</span><span class="p">.</span><span class="nf">Fire</span><span class="p">(</span><span class="nx">entry</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">err</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+
+	<span class="k">return</span> <span class="kc">nil</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><ol>
+<li>调用AddHook时, 将Hook加入到LevelHooks map中</li>
+<li>程序打印log, 会最终执行到<code>Entry.log()</code></li>
+<li>Entry.log()会调用<code>fireHooks()</code></li>
+<li>fireHooks又会调用LevelHooks Fire()函数, 该函数会遍历所有的Hook, 从而执行相应的Hook</li>
+</ol>
+<h2 id="reportcaller"><a href="#reportcaller" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>ReportCaller</h2>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kn">import</span> <span class="p">(</span>
+	<span class="nx">log</span> <span class="s">&#34;github.com/sirupsen/logrus&#34;</span>
+<span class="p">)</span>
+
+<span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">SetReportCaller</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">Info</span><span class="p">(</span><span class="s">&#34;hello logrus&#34;</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>输出:</p>
+<p><code>INFO[0000]/Users/haohongfan/goproject/test/logrus_test/main.go:37 main.main() hello logrus</code></p>
+<p>对比不开启<code>ReportCaller</code>的日志, 多了下面字段:</p>
+<ol>
+<li>日志打印的文件名字</li>
+<li>日志打印的行号</li>
+<li>日志打印的函数名字</li>
+</ol>
+<p>关于如何实现的, 推荐先看鸟窝博客- &lt;&lt;如何在Go的函数中得到调用者函数名?&gt;&gt;</p>
+<p>其实ReportCaller主要是提供给Formatter使用的, 例如: JSONFormatter</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// json_formatter.go:L91-103
+</span><span class="c1"></span><span class="k">if</span> <span class="nx">entry</span><span class="p">.</span><span class="nf">HasCaller</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">funcVal</span> <span class="o">:=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Caller</span><span class="p">.</span><span class="nx">Function</span>
+	<span class="nx">fileVal</span> <span class="o">:=</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;%s:%d&#34;</span><span class="p">,</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Caller</span><span class="p">.</span><span class="nx">File</span><span class="p">,</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Caller</span><span class="p">.</span><span class="nx">Line</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">f</span><span class="p">.</span><span class="nx">CallerPrettyfier</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">funcVal</span><span class="p">,</span> <span class="nx">fileVal</span> <span class="p">=</span> <span class="nx">f</span><span class="p">.</span><span class="nf">CallerPrettyfier</span><span class="p">(</span><span class="nx">entry</span><span class="p">.</span><span class="nx">Caller</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">funcVal</span> <span class="o">!=</span> <span class="s">&#34;&#34;</span> <span class="p">{</span>
+		<span class="nx">data</span><span class="p">[</span><span class="nx">f</span><span class="p">.</span><span class="nx">FieldMap</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="nx">FieldKeyFunc</span><span class="p">)]</span> <span class="p">=</span> <span class="nx">funcVal</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">fileVal</span> <span class="o">!=</span> <span class="s">&#34;&#34;</span> <span class="p">{</span>
+		<span class="nx">data</span><span class="p">[</span><span class="nx">f</span><span class="p">.</span><span class="nx">FieldMap</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="nx">FieldKeyFile</span><span class="p">)]</span> <span class="p">=</span> <span class="nx">fileVal</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>由于打算结合logrus的实现, 出一篇介绍golang如何获取调用者的文件名/函数名/行号等等, 及其实现的原理的文章, 就不在继续扩展了</p>
+<p>这里简单说下logrus的实现过程.</p>
+<p>规则:</p>
+<ol>
+<li>当设置SetReportCaller(true)时, 会最终在Entry.log()函数调用<code>entry.Caller = getCaller()</code></li>
+<li><code>getCaller()</code>函数有个<code>callerInitOnce</code> sync.Once变量, 在第一次被调用时会获取logrus的包名字是<code>github.com/sirupsen/logrus</code></li>
+<li>紧接着调用<code>runtime.CallersFrames</code>获取到所有函数调用栈</li>
+<li>然后比对函数栈的package名字, 与<code>github.com/sirupsen/logrus</code>相比, 如果不相等, 则是去掉logrus包的第一个调用者; 否则continue</li>
+</ol>
+<p>比如:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">SetReportCaller</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">Info</span><span class="p">(</span><span class="s">&#34;hello logrus&#34;</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>函数调用栈的顺序是:</p>
+<ol>
+<li>github.com/sirupsen/logrus.(*Logger).Log</li>
+<li>github.com/sirupsen/logrus.(*Logger).Info</li>
+<li>github.com/sirupsen/logrus.Info</li>
+<li>main.main</li>
+</ol>
+<p>按照上面的规则, 由于1,2,3获取到的package包名都是github.com/sirupsen/logrus, 故continue, 最终获取到的第一个函数是main.main的<code>*runtime.Frame</code>. Frame包含着文件名, 函数名, 行号等等</p>
+<p>我们回过头看logrus获取调用者的这个实现. 是靠着完全遍历匹配package名来获取调用者的. 先抛去runtime.Caller等相关的函数是否慢的问题, 单说这个完全匹配的过程已经浪费了大量时间处理这个事情. <strong>所以我们日志在release版本下还是尽量不要开启这个选项, logrus也不建议使用这开启这个选项</strong></p>
+<h2 id="write"><a href="#write" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>write</h2>
+<p>logrus另外一个非常重要的函数</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// entry.go:L252-264
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">entry</span> <span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="nf">write</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="nx">serialized</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">Formatter</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="nx">entry</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintf</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">Stderr</span><span class="p">,</span> <span class="s">&#34;Failed to obtain reader, %v\n&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+		<span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">Out</span><span class="p">.</span><span class="nf">Write</span><span class="p">(</span><span class="nx">serialized</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+			<span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintf</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">Stderr</span><span class="p">,</span> <span class="s">&#34;Failed to write to log, %v\n&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>看着很简单, 其实包含的内容还是挺多的: <code>Formatter</code>, <code>Out</code></p>
+<h3 id="formatter"><a href="#formatter" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>Formatter</h3>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">type</span> <span class="nx">Formatter</span> <span class="kd">interface</span> <span class="p">{</span>
+	<span class="nf">Format</span><span class="p">(</span><span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>由于Formatter是个接口类型, 故可以根据自己的需求, 实现自己的Formatter, 只需要实现对应的Format函数即可</p>
+<p>继续查看Formatter的具体调用过程(暂且不管Mutex的问题)</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 执行Formatter的地方
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">entry</span> <span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="nf">write</span><span class="p">()</span> <span class="p">{</span>
+	<span class="o">...</span>
+
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="nx">serialized</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">Formatter</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="nx">entry</span><span class="p">)</span>
+
+	<span class="o">...</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// 设置Formatter的地方
+</span><span class="c1">// SetFormatter sets the standard logger formatter.
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">SetFormatter</span><span class="p">(</span><span class="nx">formatter</span> <span class="nx">Formatter</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">std</span><span class="p">.</span><span class="nf">SetFormatter</span><span class="p">(</span><span class="nx">formatter</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>在调用logrus.SetFormatter()函数后, <code>Logger</code>的<code>Formatter</code>字段就被设置为你想使用的<code>XXXFormatter</code>了, 如果没有设置那么就是默认的<code>TextFormatter</code></p>
+<p>程序执行到<code>entry.Logger.Formatter.Format(entry)</code>时, 就会执行具体的XXXFormatter的Format函数, 从而执行具体的序列化过程</p>
+<p>这里由于篇幅限制只解析比较简单的<code>JSONFormatter</code>, 这个其实经常被用到的Formatter.</p>
+<h4 id="jsonformatter"><a href="#jsonformatter" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>JSONFormatter</h4>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// json_formatter.go:L24-54
+</span><span class="c1"></span><span class="kd">type</span> <span class="nx">JSONFormatter</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">TimestampFormat</span> <span class="kt">string</span> <span class="c1">// 设置Formatter时间格式
+</span><span class="c1"></span>	<span class="nx">DisableTimestamp</span> <span class="kt">bool</span>  <span class="c1">// 控制序列化时是否显示时间
+</span><span class="c1"></span>	<span class="nx">DataKey</span> <span class="kt">string</span> <span class="c1">// 配合主要是配合WithFields使用
+</span><span class="c1"></span>	<span class="nx">FieldMap</span> <span class="nx">FieldMap</span> <span class="c1">// 其实用处很小, 就是让用户自定义序列化字段的名字
+</span><span class="c1"></span>	<span class="nx">CallerPrettyfier</span> <span class="kd">func</span><span class="p">(</span><span class="o">*</span><span class="nx">runtime</span><span class="p">.</span><span class="nx">Frame</span><span class="p">)</span> <span class="p">(</span><span class="nx">function</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">file</span> <span class="kt">string</span><span class="p">)</span> <span class="c1">// 配合SetReportCaller, 不需要太关注
+</span><span class="c1"></span>	<span class="nx">PrettyPrint</span> <span class="kt">bool</span> <span class="c1">// 让Json格式化输出
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p><strong>主要字段介绍</strong></p>
+<h5 id="1timestampformat"><a href="#1timestampformat" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>1.TimestampFormat</h5>
+<p>Time的时间格式, 设置JSONFormatter TimestampFormat字段时就可以选择下面这些常量. 默认值:time.RFC3339</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">ANSIC       = &#34;Mon Jan _2 15:04:05 2006&#34;
+UnixDate    = &#34;Mon Jan _2 15:04:05 MST 2006&#34;
+RubyDate    = &#34;Mon Jan 02 15:04:05 -0700 2006&#34;
+RFC822      = &#34;02 Jan 06 15:04 MST&#34;
+RFC822Z     = &#34;02 Jan 06 15:04 -0700&#34; // RFC822 with numeric zone
+RFC850      = &#34;Monday, 02-Jan-06 15:04:05 MST&#34;
+RFC1123     = &#34;Mon, 02 Jan 2006 15:04:05 MST&#34;
+RFC1123Z    = &#34;Mon, 02 Jan 2006 15:04:05 -0700&#34; // RFC1123 with numeric zone
+RFC3339     = &#34;2006-01-02T15:04:05Z07:00&#34;
+RFC3339Nano = &#34;2006-01-02T15:04:05.999999999Z07:00&#34;
+Kitchen     = &#34;3:04PM&#34;
+// Handy time stamps.
+Stamp      = &#34;Jan _2 15:04:05&#34;
+StampMilli = &#34;Jan _2 15:04:05.000&#34;
+StampMicro = &#34;Jan _2 15:04:05.000000&#34;
+StampNano  = &#34;Jan _2 15:04:05.000000000
+</code></pre></td></tr></table></div>
+</div>
+</div><h5 id="2datakey"><a href="#2datakey" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>2.DataKey</h5>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">SetFormatter</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">log</span><span class="p">.</span><span class="nx">JSONFormatter</span><span class="p">{</span>
+		<span class="nx">DataKey</span><span class="p">:</span> <span class="s">&#34;hhf&#34;</span><span class="p">,</span>
+	<span class="p">})</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">WithFields</span><span class="p">(</span><span class="nx">log</span><span class="p">.</span><span class="nx">Fields</span><span class="p">{</span><span class="s">&#34;k1&#34;</span><span class="p">:</span> <span class="s">&#34;v1&#34;</span><span class="p">}).</span><span class="nf">Info</span><span class="p">(</span><span class="s">&#34;hello logrus&#34;</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>输出:</p>
+<p><code>{&quot;hhf&quot;:{&quot;k1&quot;:&quot;v1&quot;},&quot;level&quot;:&quot;info&quot;,&quot;msg&quot;:&quot;hello logrus&quot;,&quot;time&quot;:&quot;2019-10-09T13:31:05+08:00&quot;}</code></p>
+<p>当没有注释掉<code>DataKey: &quot;hhf&quot;</code>时, 输出就会变成下面</p>
+<p><code>{&quot;k1&quot;:&quot;v1&quot;,&quot;level&quot;:&quot;info&quot;,&quot;msg&quot;:&quot;hello logrus&quot;,&quot;time&quot;:&quot;2019-10-09T13:32:26+08:00&quot;}</code></p>
+<p>其实就是用<code>DataKey</code>来包装一下WithFields的k-v字段</p>
+<h5 id="3fieldmap"><a href="#3fieldmap" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>3.FieldMap</h5>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">SetFormatter</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">log</span><span class="p">.</span><span class="nx">JSONFormatter</span><span class="p">{</span>
+		<span class="nx">FieldMap</span><span class="p">:</span> <span class="nx">log</span><span class="p">.</span><span class="nx">FieldMap</span><span class="p">{</span>
+			<span class="nx">log</span><span class="p">.</span><span class="nx">FieldKeyTime</span><span class="p">:</span>  <span class="s">&#34;@timestamphhf&#34;</span><span class="p">,</span>
+			<span class="nx">log</span><span class="p">.</span><span class="nx">FieldKeyLevel</span><span class="p">:</span> <span class="s">&#34;@levelhhf&#34;</span><span class="p">,</span>
+			<span class="nx">log</span><span class="p">.</span><span class="nx">FieldKeyMsg</span><span class="p">:</span>   <span class="s">&#34;@messagehhf&#34;</span><span class="p">,</span>
+			<span class="nx">log</span><span class="p">.</span><span class="nx">FieldKeyFunc</span><span class="p">:</span>  <span class="s">&#34;@callerhhf&#34;</span><span class="p">,</span>
+		<span class="p">},</span>
+	<span class="p">})</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">WithFields</span><span class="p">(</span><span class="nx">log</span><span class="p">.</span><span class="nx">Fields</span><span class="p">{</span><span class="s">&#34;k1&#34;</span><span class="p">:</span> <span class="s">&#34;v1&#34;</span><span class="p">}).</span><span class="nf">Info</span><span class="p">(</span><span class="s">&#34;hello logrus&#34;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>输出:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">{&#34;@levelhhf&#34;:&#34;info&#34;,&#34;@messagehhf&#34;:&#34;hello logrus&#34;,&#34;@timestamphhf&#34;:&#34;2019-10-09T13:42:09+08:00&#34;,&#34;k1&#34;:&#34;v1&#34;}
+</code></pre></td></tr></table></div>
+</div>
+</div><p>主要的key有下面这几种类型</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">FieldKeyMsg            = &#34;msg&#34;
+FieldKeyLevel          = &#34;level&#34;
+FieldKeyTime           = &#34;time&#34;
+FieldKeyLogrusError    = &#34;logrus_error&#34;
+FieldKeyFunc           = &#34;func&#34;
+FieldKeyFile           = &#34;file
+</code></pre></td></tr></table></div>
+</div>
+</div><h5 id="4prettyprint"><a href="#4prettyprint" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>4.PrettyPrint</h5>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">SetFormatter</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">log</span><span class="p">.</span><span class="nx">JSONFormatter</span><span class="p">{</span><span class="nx">PrettyPrint</span><span class="p">:</span> <span class="kc">true</span><span class="p">})</span>
+	<span class="nx">log</span><span class="p">.</span><span class="nf">WithFields</span><span class="p">(</span><span class="nx">log</span><span class="p">.</span><span class="nx">Fields</span><span class="p">{</span><span class="s">&#34;k1&#34;</span><span class="p">:</span> <span class="s">&#34;v1&#34;</span><span class="p">}).</span><span class="nf">Info</span><span class="p">(</span><span class="s">&#34;hello logrus&#34;</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>输出结果:</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">{
+  &#34;k1&#34;: &#34;v1&#34;,
+  &#34;level&#34;: &#34;info&#34;,
+  &#34;msg&#34;: &#34;hello logrus&#34;,
+  &#34;time&#34;: &#34;2019-10-09T13:52:18+08:00&#34;
+}
+</code></pre></td></tr></table></div>
+</div>
+</div><h4 id="format"><a href="#format" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>Format</h4>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// json_formatter.go:L57-121
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">f</span> <span class="o">*</span><span class="nx">JSONFormatter</span><span class="p">)</span> <span class="nf">Format</span><span class="p">(</span><span class="nx">entry</span> <span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="c1">// 将Entry的WithFields的kv值遍历放入到map[string]interface{}类型的data中
+</span><span class="c1"></span>	<span class="nx">data</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="nx">Fields</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">entry</span><span class="p">.</span><span class="nx">Data</span><span class="p">)</span><span class="o">+</span><span class="mi">4</span><span class="p">)</span>
+	<span class="k">for</span> <span class="nx">k</span><span class="p">,</span> <span class="nx">v</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Data</span> <span class="p">{</span>
+		<span class="k">switch</span> <span class="nx">v</span> <span class="o">:=</span> <span class="nx">v</span><span class="p">.(</span><span class="kd">type</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">case</span> <span class="kt">error</span><span class="p">:</span>
+			<span class="c1">// Otherwise errors are ignored by `encoding/json`
+</span><span class="c1"></span>			<span class="c1">// https://github.com/sirupsen/logrus/issues/137
+</span><span class="c1"></span>			<span class="nx">data</span><span class="p">[</span><span class="nx">k</span><span class="p">]</span> <span class="p">=</span> <span class="nx">v</span><span class="p">.</span><span class="nf">Error</span><span class="p">()</span>
+		<span class="k">default</span><span class="p">:</span>
+			<span class="nx">data</span><span class="p">[</span><span class="nx">k</span><span class="p">]</span> <span class="p">=</span> <span class="nx">v</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+
+	<span class="c1">// 判断是否存在DataKey, 如果是就用DataKey包装一下data
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">f</span><span class="p">.</span><span class="nx">DataKey</span> <span class="o">!=</span> <span class="s">&#34;&#34;</span> <span class="p">{</span>
+		<span class="nx">newData</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="nx">Fields</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+		<span class="nx">newData</span><span class="p">[</span><span class="nx">f</span><span class="p">.</span><span class="nx">DataKey</span><span class="p">]</span> <span class="p">=</span> <span class="nx">data</span>
+		<span class="nx">data</span> <span class="p">=</span> <span class="nx">newData</span>
+	<span class="p">}</span>
+
+	<span class="c1">// 该函数判断调用WithFields时, 当用户自定义的Key与logrus内置的key相同时, 
+</span><span class="c1"></span>	<span class="c1">// 用户自定义的key会转换成fields.xx. 例如:logrus.WithField(&#34;level&#34;, 1).Info(&#34;hello&#34;), 
+</span><span class="c1"></span>	<span class="c1">// 由于level跟内置的FieldKeyLevel冲突了, 那么输出就会变成
+</span><span class="c1"></span>	<span class="c1">// {&#34;level&#34;: &#34;info&#34;, &#34;fields.level&#34;: 1, &#34;msg&#34;: &#34;hello&#34;, &#34;time&#34;: &#34;...&#34;}
+</span><span class="c1"></span>	<span class="nf">prefixFieldClashes</span><span class="p">(</span><span class="nx">data</span><span class="p">,</span> <span class="nx">f</span><span class="p">.</span><span class="nx">FieldMap</span><span class="p">,</span> <span class="nx">entry</span><span class="p">.</span><span class="nf">HasCaller</span><span class="p">())</span>
+
+	<span class="c1">// 设置时间的序列化方式
+</span><span class="c1"></span>	<span class="nx">timestampFormat</span> <span class="o">:=</span> <span class="nx">f</span><span class="p">.</span><span class="nx">TimestampFormat</span>
+	<span class="k">if</span> <span class="nx">timestampFormat</span> <span class="o">==</span> <span class="s">&#34;&#34;</span> <span class="p">{</span>
+		<span class="nx">timestampFormat</span> <span class="p">=</span> <span class="nx">defaultTimestampFormat</span>
+	<span class="p">}</span>
+
+	<span class="c1">// 判断entry的error是否有值, 进行相关的序列化
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">err</span> <span class="o">!=</span> <span class="s">&#34;&#34;</span> <span class="p">{</span>
+		<span class="nx">data</span><span class="p">[</span><span class="nx">f</span><span class="p">.</span><span class="nx">FieldMap</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="nx">FieldKeyLogrusError</span><span class="p">)]</span> <span class="p">=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">err</span>
+	<span class="p">}</span>
+
+	<span class="c1">// 判断是否禁用Timestamp, 如果不禁用, 就将时间戳按照相应的格式序列化. entry.Time在entry.log()函数里进行了初始化
+</span><span class="c1"></span>	<span class="c1">// if entry.Time.IsZero() {
+</span><span class="c1"></span>	<span class="c1">// 	entry.Time = time.Now()
+</span><span class="c1"></span>	<span class="c1">// }
+</span><span class="c1"></span>	<span class="k">if</span> <span class="p">!</span><span class="nx">f</span><span class="p">.</span><span class="nx">DisableTimestamp</span> <span class="p">{</span>
+		<span class="nx">data</span><span class="p">[</span><span class="nx">f</span><span class="p">.</span><span class="nx">FieldMap</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="nx">FieldKeyTime</span><span class="p">)]</span> <span class="p">=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Time</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="nx">timestampFormat</span><span class="p">)</span>
+	<span class="p">}</span>
+
+	<span class="c1">// 设置日志的具体内容
+</span><span class="c1"></span>	<span class="nx">data</span><span class="p">[</span><span class="nx">f</span><span class="p">.</span><span class="nx">FieldMap</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="nx">FieldKeyMsg</span><span class="p">)]</span> <span class="p">=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Message</span>
+	<span class="c1">// 设置日志级别
+</span><span class="c1"></span>	<span class="nx">data</span><span class="p">[</span><span class="nx">f</span><span class="p">.</span><span class="nx">FieldMap</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="nx">FieldKeyLevel</span><span class="p">)]</span> <span class="p">=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Level</span><span class="p">.</span><span class="nf">String</span><span class="p">()</span>
+	<span class="c1">// 序列化调用位置
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">entry</span><span class="p">.</span><span class="nf">HasCaller</span><span class="p">()</span> <span class="p">{</span>
+		<span class="nx">funcVal</span> <span class="o">:=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Caller</span><span class="p">.</span><span class="nx">Function</span>
+		<span class="nx">fileVal</span> <span class="o">:=</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;%s:%d&#34;</span><span class="p">,</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Caller</span><span class="p">.</span><span class="nx">File</span><span class="p">,</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Caller</span><span class="p">.</span><span class="nx">Line</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nx">f</span><span class="p">.</span><span class="nx">CallerPrettyfier</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+			<span class="nx">funcVal</span><span class="p">,</span> <span class="nx">fileVal</span> <span class="p">=</span> <span class="nx">f</span><span class="p">.</span><span class="nf">CallerPrettyfier</span><span class="p">(</span><span class="nx">entry</span><span class="p">.</span><span class="nx">Caller</span><span class="p">)</span>
+		<span class="p">}</span>
+		<span class="k">if</span> <span class="nx">funcVal</span> <span class="o">!=</span> <span class="s">&#34;&#34;</span> <span class="p">{</span>
+			<span class="nx">data</span><span class="p">[</span><span class="nx">f</span><span class="p">.</span><span class="nx">FieldMap</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="nx">FieldKeyFunc</span><span class="p">)]</span> <span class="p">=</span> <span class="nx">funcVal</span>
+		<span class="p">}</span>
+		<span class="k">if</span> <span class="nx">fileVal</span> <span class="o">!=</span> <span class="s">&#34;&#34;</span> <span class="p">{</span>
+			<span class="nx">data</span><span class="p">[</span><span class="nx">f</span><span class="p">.</span><span class="nx">FieldMap</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="nx">FieldKeyFile</span><span class="p">)]</span> <span class="p">=</span> <span class="nx">fileVal</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+
+	<span class="c1">// entry.Buffer是在entry.log()函数里(entry.go:L226-229)从sync.Pool里获取到一块内容空间
+</span><span class="c1"></span>	<span class="c1">// 目的是: 防止JSONFormatter每次调用都会去申请空间, 减小GC压力
+</span><span class="c1"></span>	<span class="kd">var</span> <span class="nx">b</span> <span class="o">*</span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span>
+	<span class="k">if</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Buffer</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">b</span> <span class="p">=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Buffer</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+		<span class="nx">b</span> <span class="p">=</span> <span class="o">&amp;</span><span class="nx">bytes</span><span class="p">.</span><span class="nx">Buffer</span><span class="p">{}</span>
+	<span class="p">}</span>
+
+	<span class="c1">// 将Buffer提供给json encoder使用
+</span><span class="c1"></span>	<span class="nx">encoder</span> <span class="o">:=</span> <span class="nx">json</span><span class="p">.</span><span class="nf">NewEncoder</span><span class="p">(</span><span class="nx">b</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">f</span><span class="p">.</span><span class="nx">PrettyPrint</span> <span class="p">{</span>
+		<span class="nx">encoder</span><span class="p">.</span><span class="nf">SetIndent</span><span class="p">(</span><span class="s">&#34;&#34;</span><span class="p">,</span> <span class="s">&#34;  &#34;</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">encoder</span><span class="p">.</span><span class="nf">Encode</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;failed to marshal fields to JSON, %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+
+	<span class="c1">// 序列化完成, 将序列化的内容返回
+</span><span class="c1"></span>	<span class="k">return</span> <span class="nx">b</span><span class="p">.</span><span class="nf">Bytes</span><span class="p">(),</span> <span class="kc">nil</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><h3 id="out"><a href="#out" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>Out</h3>
+<p>Formatter介绍完了, 回到上面write()函数继续剖析Out相关</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="c1">// entry.go:L252-264
+</span><span class="c1"></span><span class="kd">func</span> <span class="p">(</span><span class="nx">entry</span> <span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="nf">write</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="nx">serialized</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">Formatter</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="nx">entry</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintf</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">Stderr</span><span class="p">,</span> <span class="s">&#34;Failed to obtain reader, %v\n&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+		<span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">Out</span><span class="p">.</span><span class="nf">Write</span><span class="p">(</span><span class="nx">serialized</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+			<span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintf</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">Stderr</span><span class="p">,</span> <span class="s">&#34;Failed to write to log, %v\n&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>在没有调用SetOutput时, 默认的Out是<code>os.Stderr</code>, 所以默认情况下基本都打印到终端里, 没有存入文件</p>
+<p>即使logrus可以提供io.Writter, 但是还是不建议在这里将日志落盘, 还是使用<code>lfsHook</code>来做这个事情</p>
+<p>在这里也回答上面一个问题, <strong>为什么在<code>Entry</code>结构体里面会有<code>Logger</code>指针存在?</strong></p>
+<p>答: 以Out举例, 由于我们在调用logrus.SetOutput()函数时, Out是设置给Logger的, 但是真正的使用者却是<code>Entry</code>. 故需要将Logger传给Entry一份</p>
+<h2 id="logrus如何保证并发的正确性"><a href="#logrus如何保证并发的正确性" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>logrus如何保证并发的正确性</h2>
+<p>logrus的并发控制的正确性是靠着Logger.Mutex来实现的. 程序中调用Logger.Mutex地方有几处:</p>
+<ol>
+<li>fireHooks() entry.go:L243</li>
+<li>write() entry.go:L252</li>
+<li>AddHook() logger.go:L313</li>
+<li>ReplaceHook() logger.go:L345</li>
+<li>SetFormatter() logger.go:L235</li>
+<li>SetNoLock() logger.go:L294</li>
+<li>SetOutput() logger.go:L332</li>
+<li>SetReportCaller() logger.go:338</li>
+</ol>
+<p>最重要的两处就是fireHooks(), write()</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">entry</span> <span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="nf">fireHooks</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="nx">err</span> <span class="o">:=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">Hooks</span><span class="p">.</span><span class="nf">Fire</span><span class="p">(</span><span class="nx">entry</span><span class="p">.</span><span class="nx">Level</span><span class="p">,</span> <span class="nx">entry</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintf</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">Stderr</span><span class="p">,</span> <span class="s">&#34;Failed to fire hook: %v\n&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="p">(</span><span class="nx">entry</span> <span class="o">*</span><span class="nx">Entry</span><span class="p">)</span> <span class="nf">write</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Lock</span><span class="p">()</span>
+	<span class="k">defer</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">mu</span><span class="p">.</span><span class="nf">Unlock</span><span class="p">()</span>
+	<span class="nx">serialized</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">entry</span><span class="p">.</span><span class="nx">Logger</span><span class="p">.</span><span class="nx">Formatter</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="nx">entry</span><span class="p">)</span>
+	<span class="o">...</span><span class="p">.</span>
+<span class="p">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><p>可以观察到, 不管有多少goroutine在调用logrus, 都是靠着资源竞争来保证顺序的正确性</p>
+<p>查看整个logrus的源码, logrus只有一个goroutine顺序处理日志数据, 并且没有相关的buffer来保存日志信息, 这就造成logrus的整体效率是不高的</p>
+<p>后面一篇文章会专门对比<code>zap</code>之间的差别, 敬请期待</p>
+<h2 id="总结"><a href="#总结" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>总结</h2>
+<p>至此, logrus的主体源码已经解析完毕</p>
+<p>一句话总结其生命周期就是: logrus是在编译期就确定的一个全局变量, 伴随着我们程序的整个生命周期而存在. 最重要的组件是: Formatter, Hook. 良好的序列化机制, 方便的插件开发是我们选择logrus的原因</p>
+<h2 id="参考文档"><a href="#参考文档" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>参考文档</h2>
+<ol>
+<li>鸟窝博客 - 如何在Go的函数中得到调用者函数名? <a href="https://colobu.com/2018/11/03/get-function-name-in-go/" target="_blank" rel="noopener">https://colobu.com/2018/11/03/get-function-name-in-go/</a></li>
+<li>logrus <a href="https://github.com/sirupsen/logrus" target="_blank" rel="noopener">https://github.com/sirupsen/logrus</a></li>
+<li>file-rotatelogs <a href="https://github.com/lestrrat-go/file-rotatelogs" target="_blank" rel="noopener">https://github.com/lestrrat-go/file-rotatelogs</a></li>
+<li>lfshook <a href="https://github.com/rifflock/lfshook" target="_blank" rel="noopener">https://github.com/rifflock/lfshook</a></li>
+<li>dingrus <a href="https://github.com/dandans-dan/dingrus" target="_blank" rel="noopener">https://github.com/dandans-dan/dingrus</a></li>
+</ol>
+            </div>
+
+            
+    
+    
+        <ul class="post-copyright">
+            <li class="copyright-item author"><span class="copyright-item-text">作者</span>：<a href="https://www.haohongfan.com/" class="p-author h-card" target="_blank" rel="noopener">haohongfan</a></li>
+            
+                
+                
+                
+                
+                <li class="copyright-item link"><span class="copyright-item-text">链接</span>：<a href="/post/2019-10-05-logrus-life-cycle/" target="_blank" rel="noopener">https://www.haohongfan.com/post/2019-10-05-logrus-life-cycle/</a></li>
+            
+            <li class="copyright-item license"><span class="copyright-item-text">许可</span>：<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></li>
+            
+        </ul>
+    
+
+
+			<div>
+				<img src="https://images.haohongfan.com/hhf11.png" alt="some_text"> 
+			</div>
+
+        </article>
+
+        
+
+        
+    <div class="updated-badge-container">
+        <span title="Updated @ 2019-10-05 11:21:24 CST" style="cursor:help">
+
+<svg xmlns="http://www.w3.org/2000/svg" width="130" height="20" class="updated-badge"><linearGradient id="b" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="a"><rect width="130" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#a)"><path class="updated-badge-left" d="M0 0h55v20H0z"/><path class="updated-badge-right" d="M55 0h75v20H55z"/><path fill="url(#b)" d="M0 0h130v20H0z"/></g><g fill="#fff" text-anchor="middle" font-size="110"><text x="285" y="150" fill="#010101" fill-opacity=".3" textLength="450" transform="scale(.1)">updated</text><text x="285" y="140" textLength="450" transform="scale(.1)">updated</text><text x="915" y="150" fill="#010101" fill-opacity=".3" textLength="650" transform="scale(.1)">2019-10-05</text><text x="915" y="140" textLength="650" transform="scale(.1)">2019-10-05</text></g></svg>
+        </span></div>
+
+
+
+        
+
+
+        
+
+
+        
+    
+    
+        <div class="related-posts">
+            <h2 class="related-title">相关文章：<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon related-icon"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"/></svg></h2>
+            <ul class="related-list">
+                
+                    <li class="related-item">
+                        <a href="/post/2019-06-11-logurs-1/" class="related-link">Logrus源码阅读(1)--基本用法</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/post/2019-12-15-zap-common-logger/" class="related-link">打造 Zap 开箱即用日志组件</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/post/2019-07-22-golang-pointer/" class="related-link">Golang是否真的没有指针运算?</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/post/2019-07-11-deadlock-detector/" class="related-link">一次golang deadlock的讨论</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/post/2019-05-26-sync-pool/" class="related-link">我所理解的Sync Pool</a>
+                    </li>
+                
+            </ul>
+        </div>
+    
+
+
+
+        
+    
+        <div class="post-tags">
+            
+                
+                
+                
+                
+                    
+                    <a href="/tags/golang/" rel="tag" class="post-tags-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon tag-icon"><path d="M0 252.118V48C0 21.49 21.49 0 48 0h204.118a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882L293.823 497.941c-18.745 18.745-49.137 18.745-67.882 0L14.059 286.059A48 48 0 0 1 0 252.118zM112 64c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48z"/></svg>golang</a>
+                
+            
+                
+                
+                
+                
+                    
+                    <a href="/tags/logrus/" rel="tag" class="post-tags-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon tag-icon"><path d="M0 252.118V48C0 21.49 21.49 0 48 0h204.118a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882L293.823 497.941c-18.745 18.745-49.137 18.745-67.882 0L14.059 286.059A48 48 0 0 1 0 252.118zM112 64c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48z"/></svg>logrus</a>
+                
+            
+        </div>
+    
+
+
+
+        
+
+
+        
+
+
+        
+    
+        
+        
+    
+    
+    
+    
+        <ul class="post-nav">
+            
+                <li class="post-nav-prev">
+                    <a href="/post/2019-12-15-zap-common-logger/" rel="prev">&lt; 打造 Zap 开箱即用日志组件</a>
+                </li>
+            
+            
+                <li class="post-nav-next">
+                    <a href="/post/2019-07-22-golang-pointer/" rel="next">Golang是否真的没有指针运算? &gt;</a>
+                </li>
+            
+        </ul>
+    
+
+
+
+        
+    
+
+        <div class="load-comments">
+            <div id="load-comments">加载评论</div>
+        </div>
+
+        
+
+        
+
+        
+            <div id="utterances"></div>
+        
+
+    
+
+
+
+    </div>
+</main>
+
+
+            
+    <div id="back-to-top" class="back-to-top">
+        <a href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon arrow-up"><path d="M34.9 289.5l-22.2-22.2c-9.4-9.4-9.4-24.6 0-33.9L207 39c9.4-9.4 24.6-9.4 33.9 0l194.3 194.3c9.4 9.4 9.4 24.6 0 33.9L413 289.4c-9.5 9.5-25 9.3-34.3-.4L264 168.6V456c0 13.3-10.7 24-24 24h-32c-13.3 0-24-10.7-24-24V168.6L69.2 289.1c-9.3 9.8-24.8 10-34.3.4z"/></svg></a>
+    </div>
+
+
+            
+    <footer id="footer" class="footer">
+        <div class="footer-inner">
+            <div class="site-info">©&nbsp;2017–2021&nbsp;&nbsp;haohongfan</div><div class="powered-by">Powered by <a href="https://github.com/gohugoio/hugo" target="_blank" rel="noopener">Hugo</a> | Theme is <a href="https://github.com/reuixiy/hugo-theme-meme" target="_blank" rel="noopener">MemE</a></div><div class="site-copyright"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></div><div class="custom-footer"><a href="http://www.beian.miit.gov.cn" target="_blank" rel="noopener">京ICP备17041575号</a> | <a href="/friend/">友情链接</a></div>
+
+            
+
+
+            
+        </div>
+    </footer>
+
+
+        </div>
+        
+
+        
+
+
+
+
+
+
+    
+
+        
+
+        
+
+        
+            <script>
+    function loadComments() {
+        (function() {
+            var utterances = document.getElementById("utterances");
+            var script = document.createElement('script');
+            script.src = 'https://utteranc.es/client.js';
+            script.async = true;
+            script.crossOrigin = 'anonymous';
+            script.setAttribute('repo', 'georgehao\/blog');
+            script.setAttribute('issue-term', 'pathname');
+            const isDark = getCurrentTheme() === 'dark';
+        if (isDark) {
+            script.setAttribute('theme', 'photon-dark');
+        } else {
+            script.setAttribute('theme', 'github-light');
+        }
+            
+            utterances.appendChild(script);
+        })();
+    }
+</script>
+        
+
+    
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@latest/dist/medium-zoom.min.js"></script>
+
+<script>
+    mediumZoom(document.querySelectorAll('div.post-body img'), {
+        background: 'hsla(var(--color-bg-h), var(--color-bg-s), var(--color-bg-l), 0.95)'
+    })
+</script>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/instant.page@5.1.0/instantpage.min.js" type="module" defer></script>
+
+
+
+
+    
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+
+
+
+
+    </body>
+</html>
